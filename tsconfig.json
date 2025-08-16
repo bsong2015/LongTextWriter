@@ -1,5 +1,5 @@
 {
-  "exclude": ["e2e-tests"],
+  "exclude": ["node_modules", "dist", "gendoc-web-ui", "e2e-tests"],
   "compilerOptions": {
     "target": "es2020",
     "module": "commonjs",

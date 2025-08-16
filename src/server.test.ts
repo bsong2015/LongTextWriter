@@ -28,9 +28,17 @@ describe('GET /api/projects', () => {
 });
 
 describe('POST /api/projects', () => {
-  it('should create a new project successfully', async () => {
-    const newProjectData = { name: 'NewProject', type: 'book' };
-    const createdProject = { ...newProjectData, id: 'some-id' };
+  it('should create a new book project successfully', async () => {
+    const newProjectData = {
+      name: 'NewBookProject',
+      type: 'book',
+      idea: {
+        language: 'en-US',
+        summary: 'A summary of the book.',
+        prompt: 'Global prompt for the book.',
+      },
+    };
+    const createdProject = { ...newProjectData, createdAt: new Date().toISOString() }; // Mock createdAt
     (projectManager.createProject as jest.Mock).mockReturnValue(createdProject);
 
     const res = await request(app)
@@ -42,19 +50,37 @@ describe('POST /api/projects', () => {
     expect(projectManager.createProject).toHaveBeenCalledWith(newProjectData);
   });
 
-  it('should return 400 if project creation fails', async () => {
-    const newProjectData = { name: 'InvalidProject' };
-    const errorMessage = 'Project name is required';
-    (projectManager.createProject as jest.Mock).mockImplementation(() => {
-      throw new Error(errorMessage);
-    });
+  it('should create a new templated project successfully', async () => {
+    const newProjectData = {
+      name: 'NewTemplatedProject',
+      type: 'templated',
+      sources: ['path/to/source1.txt', 'path/to/source2.txt'],
+      template: 'path/to/template.txt',
+    };
+    const createdProject = { ...newProjectData, createdAt: new Date().toISOString() }; // Mock createdAt
+    (projectManager.createProject as jest.Mock).mockReturnValue(createdProject);
 
     const res = await request(app)
       .post('/api/projects')
       .send(newProjectData);
 
+    expect(res.statusCode).toEqual(201);
+    expect(res.body).toEqual(createdProject);
+    expect(projectManager.createProject).toHaveBeenCalledWith(newProjectData);
+  });
+
+  it('should return 400 with validation errors if project data is invalid', async () => {
+    const invalidProjectData = { name: 'InvalidProject', type: 'book' }; // Missing 'idea'
+    // We don't need to mock createProject for validation errors, as validation happens before it's called.
+
+    const res = await request(app)
+      .post('/api/projects')
+      .send(invalidProjectData);
+
     expect(res.statusCode).toEqual(400);
-    expect(res.body).toEqual({ message: errorMessage });
+    expect(res.body.message).toEqual('Validation Error');
+    expect(res.body.errors).toBeInstanceOf(Array);
+    expect(res.body.errors.length).toBeGreaterThan(0);
   });
 });
 

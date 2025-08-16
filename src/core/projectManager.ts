@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Project, GeneratedContentSchema, ProjectSchema, BookOutline, GeneratedContent, BookProjectSchema, SeriesProjectSchema, TemplatedProjectSchema, BookProject, SeriesProject, TemplatedProject } from '../types';
+import { Project, GeneratedContentSchema, ProjectSchema, BookOutline, GeneratedContent, BookProjectSchema, SeriesProjectSchema, TemplatedProjectSchema, BookProject, SeriesProject, TemplatedProject, ProjectDetail, PublishResult, ProjectStatus } from '../types';
 import { t } from '../utils/i18n';
 import { ChatOpenAI } from '@langchain/openai';
 import { HumanMessage, SystemMessage, AIMessage } from '@langchain/core/messages';
@@ -122,7 +122,7 @@ export function getProjectList() {
   const projectsData = projectDirs.map(dirName => {
     const projectJsonPath = path.resolve(PROJECTS_DIR, dirName, 'project.json');
     let project: Project | null = null;
-    let status: { type: string, percentage?: number, done?: number, total?: number, value?: string } = { type: 'text', value: t('status_unknown') };
+    let status: ProjectStatus = { type: 'text', value: t('status_unknown') };
 
     if (fs.existsSync(projectJsonPath)) {
       try {
@@ -154,7 +154,7 @@ export function getProjectList() {
       name: project?.name || dirName,
       type: project?.type || t('status_unknown'),
       status: status,
-      createdAt: project ? new Date(project.createdAt).toLocaleString() : '-',
+      createdAt: project?.createdAt ? new Date(project.createdAt).toLocaleString() : '-',
     };
   });
 
@@ -173,7 +173,7 @@ export function getProjectDetails(projectName: string) {
     const content = fs.readFileSync(projectJsonPath, 'utf-8');
     const project = ProjectSchema.parse(JSON.parse(content));
 
-    let status: { type: string, percentage?: number, done?: number, total?: number, value?: string } = { type: 'text', value: t('status_unknown') };
+    let status: ProjectStatus = { type: 'text', value: t('status_unknown') };
 
     if (project?.type === 'book' || project?.type === 'series') {
         const generatedJsonPath = getGeneratedContentPath(projectName);
@@ -565,7 +565,7 @@ import archiver from 'archiver';
 
 // ... (rest of the file)
 
-export async function publishProject(projectName: string, publishType: string) {
+export async function publishProject(projectName: string, publishType: string): Promise<PublishResult> {
   const project = getProjectDetails(projectName);
   if (!project) {
     throw new Error(t('project_not_found_error', { projectName: projectName }));
@@ -701,7 +701,7 @@ export function createProject(projectData: any) {
         name,
         type,
         createdAt: new Date().toISOString(),
-        idea: { language: rest.language, summary: rest.summary, prompt: rest.prompt },
+        idea: { language: rest.idea.language, summary: rest.idea.summary, prompt: rest.idea.prompt },
       });
       break;
     case 'templated':
@@ -709,8 +709,8 @@ export function createProject(projectData: any) {
         name,
         type: 'templated',
         createdAt: new Date().toISOString(),
-        sources: [rest.sourcePath],
-        template: rest.templatePath,
+        sources: rest.sources,
+        template: rest.template,
       });
       break;
     default:

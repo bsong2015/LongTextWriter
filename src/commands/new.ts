@@ -41,13 +41,15 @@ export async function newCommand() {
   switch (type) {
     case 'book':
     case 'series':
-      projectData.language = await input({ message: t('new_project_language_prompt'), default: 'English' });
-      projectData.summary = await input({ message: t('new_project_idea_prompt') });
-      projectData.prompt = await input({ message: t('new_project_global_prompt') });
+      projectData.idea = {
+        language: await input({ message: t('new_project_language_prompt'), default: 'English' }),
+        summary: await input({ message: t('new_project_idea_prompt') }),
+        prompt: await input({ message: t('new_project_global_prompt') }),
+      };
       break;
     case 'templated':
-      projectData.sourcePath = await input({ message: t('new_project_templated_source_prompt') });
-      projectData.templatePath = await input({ message: t('new_project_templated_template_prompt') });
+      projectData.sources = [await input({ message: t('new_project_templated_source_prompt') })]; // Wrap in array
+      projectData.template = await input({ message: t('new_project_templated_template_prompt') }); // Change to 'template'
       break;
     default:
       console.error(t('new_project_invalid_type_error'));

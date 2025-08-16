@@ -154,9 +154,7 @@ describe('createProject', () => {
     const projectData = {
       name: projectName,
       type: 'book',
-      language: 'en',
-      summary: 'A summary of the book.',
-      prompt: 'A prompt for the book.',
+      idea: { language: 'en', summary: 'A summary of the book.', prompt: 'A prompt for the book.' },
     };
 
     const expectedProjectPath = path.resolve(PROJECTS_DIR, projectName);
@@ -193,9 +191,7 @@ describe('createProject', () => {
     const projectData = {
       name: projectName,
       type: 'series',
-      language: 'zh',
-      summary: 'A summary of the series.',
-      prompt: 'A prompt for the series.',
+      idea: { language: 'zh', summary: 'A summary of the series.', prompt: 'A prompt for the series.' }
     };
 
     const expectedProjectPath = path.resolve(PROJECTS_DIR, projectName);
@@ -231,8 +227,8 @@ describe('createProject', () => {
     const projectData = {
       name: projectName,
       type: 'templated',
-      sourcePath: 'src/data.txt',
-      templatePath: 'templates/template.md',
+      sources: ['src/data.txt'],
+      template: 'templates/template.md',
     };
 
     const expectedProjectPath = path.resolve(PROJECTS_DIR, projectName);
@@ -274,9 +270,7 @@ describe('createProject', () => {
     const projectData = {
       name: projectName,
       type: 'book',
-      language: 'en',
-      summary: 'A summary.',
-      prompt: 'A prompt.',
+      idea: { language: 'en', summary: 'A summary of the book.', prompt: 'A prompt for the book.' },
     };
 
     (fs.existsSync as jest.Mock).mockImplementation((p) => {

@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const BaseProjectSchema = z.object({
   name: z.string(),
   type: z.enum(['book', 'templated', 'series']),
-  createdAt: z.string().datetime(),
+  createdAt: z.string().datetime().optional(), // Made optional
 });
 
 // Schema for the 'idea' object in book and series projects
@@ -59,13 +59,37 @@ export const ProjectSchema = z.union([
 
 // Type definitions inferred from schemas
 export type BaseProject = z.infer<typeof BaseProjectSchema>;
-export type Idea = z.infer<typeof IdeaSchema>;
+export type ProjectIdea = z.infer<typeof IdeaSchema>; // Renamed from Idea to ProjectIdea
 export type BookOutline = z.infer<typeof BookOutlineSchema>;
 export type BookProject = z.infer<typeof BookProjectSchema>;
 export type SeriesProject = z.infer<typeof SeriesProjectSchema>;
 export type TemplatedProject = z.infer<typeof TemplatedProjectSchema>;
 export type Project = z.infer<typeof ProjectSchema>;
 
+// Type for project status (for UI display)
+export type ProjectStatus = {
+  type: 'progress';
+  percentage: number;
+  done: number;
+  total: number;
+} | {
+  type: 'text';
+  value: string;
+} | {
+  type: 'icon';
+  value: 'completed' | 'pending' | 'error';
+};
+
+// Type for project details (Project with status)
+export type ProjectDetail = Project & {
+  status: ProjectStatus;
+};
+
+// Type for publish result
+export type PublishResult = {
+  message: string;
+  filePath: string;
+};
 
 // Schema for the generated content, similar to abook's Book type
 export const GeneratedContentSchema = z.object({

@@ -13,9 +13,11 @@ async function runBusinessWorkflowTest() {
             name: TEST_PROJECT_NAME,
             type: 'book', // 假设 'book' 是一个有效的项目类型
             description: '这是一个用于业务流程测试的项目',
-            language: 'en',
-            summary: '这是一个测试项目的摘要',
-            prompt: '这是一个测试项目的生成提示'
+			idea: {
+				language: 'en',
+				summary: '这是一个测试项目的摘要',
+				prompt: '这是一个测试项目的生成提示'
+			}
         });
         console.log('   项目创建成功:', createResponse.data);
 

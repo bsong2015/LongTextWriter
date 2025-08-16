@@ -27,7 +27,7 @@ async function loadProject(projectName: string): Promise<Project | null> {
 
 function displayBookOrSeriesStatus(project: BookProject | SeriesProject) {
   console.log(`\n- Type: ${project.type}`);
-  console.log(`- Created At: ${new Date(project.createdAt).toLocaleString()}`);
+  console.log(`- Created At: ${project.createdAt ? new Date(project.createdAt).toLocaleString() : 'N/A'}`);
   
   if (!project.outline) {
     console.log('\nStatus: Outline not generated yet.');
@@ -74,7 +74,7 @@ function displayBookOrSeriesStatus(project: BookProject | SeriesProject) {
 
 function displayTemplatedStatus(project: TemplatedProject) {
     console.log(`\n- Type: ${project.type}`);
-    console.log(`- Created At: ${new Date(project.createdAt).toLocaleString()}`);
+    console.log(`- Created At: ${project.createdAt ? new Date(project.createdAt).toLocaleString() : 'N/A'}`);
     console.log(`- Source(s): ${project.sources.join(', ')}`);
     console.log(`- Template: ${project.template}`);
 

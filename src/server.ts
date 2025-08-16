@@ -2,13 +2,47 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import * as fs from 'fs';
-import { getProjectList, createProject, deleteProject, getProjectDetails, getGeneratedProjectContent, saveGeneratedProjectContent, generateProjectOutline, startContentGeneration, saveProjectOutline, publishProject } from './core/projectManager';
+import multer from 'multer';
+import { Buffer } from 'node:buffer';
+import { getProjectList, createProject, deleteProject, getProjectDetails, getGeneratedProjectContent, saveGeneratedProjectContent,generateProjectOutline, startContentGeneration, saveProjectOutline, publishProject } from './core/projectManager';
+import { ProjectSchema } from './types'; // Import ProjectSchema from types.ts
+import { z } from 'zod';
 
 export const app = express();
 const port = 3000;
 
+// Multer setup for file uploads
+const uploadDir = path.resolve(process.cwd(), 'gendoc-workspace', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    // Attempt to re-encode originalname to ensure UTF-8
+    const originalnameBuffer = Buffer.from(file.originalname, 'latin1');
+    const utf8Originalname = originalnameBuffer.toString('utf8');
+    cb(null, `${Date.now()}-${utf8Originalname}`);
+  },
+});
+const upload = multer({ storage: storage });
+
 app.use(express.json()); // Middleware to parse JSON request bodies
 app.use(express.static(path.join(__dirname, '../public')));
+
+// API endpoint for file uploads
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No file uploaded.' });
+  }
+  // Return the path relative to the project root or a unique identifier
+  // For now, return the full path, frontend will need to handle it.
+  const relativeToCwdPath = path.relative(process.cwd(), req.file.path);
+  res.status(200).json({ filePath: relativeToCwdPath, fileName: req.file.filename });
+});
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
@@ -26,10 +60,14 @@ app.get('/api/projects', (req, res) => {
 
 app.post('/api/projects', (req, res) => {
   try {
-    const newProject = createProject(req.body);
+    const parsedProject = ProjectSchema.parse(req.body); // Validate incoming data
+    const newProject = createProject(parsedProject); // Pass validated data
     res.status(201).json(newProject);
   } catch (error: any) {
     console.error('Error creating project:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Validation Error', errors: error.errors });
+    }
     res.status(400).json({ message: error.message });
   }
 });
