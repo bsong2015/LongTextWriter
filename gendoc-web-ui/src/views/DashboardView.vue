@@ -372,6 +372,10 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 24px;
   padding: 0 20px; /* Adjust padding to match el-header */
+  max-width: 1200px; /* Max width for centering */
+  margin-left: auto;
+  margin-right: auto;
+  gap: 20px; /* Add space between flex items */
 }
 
 .page-title {
@@ -382,6 +386,9 @@ onMounted(() => {
 
 .project-main-content {
   padding: 0 20px; /* Adjust padding to match el-main */
+  max-width: 1200px; /* Max width for centering */
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .project-col {
