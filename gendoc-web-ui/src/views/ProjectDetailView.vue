@@ -133,6 +133,24 @@ onMounted(() => {
   margin-top: 20px;
 }
 
+/* Force the tab header to align to the left */
+.project-tabs :deep(.el-tabs__nav-wrap) {
+  justify-content: flex-start;
+}
+
+/* --- FIX FOR CONTENT SHRINKING --- */
+/* This ensures the content area itself is not centering its children */
+.project-tabs :deep(.el-tabs__content) {
+  text-align: left;
+}
+
+/* This ensures the tab panel takes up the full width */
+.project-tabs :deep(.el-tab-pane) {
+  width: 100%;
+  display: block;
+}
+/* --- END FIX --- */
+
 .loading-state {
   display: flex;
   flex-direction: column;

@@ -1,61 +1,72 @@
 <template>
-  <el-card class="outline-editor-card">
-    <template #header>
-      <div class="card-header-actions">
-        <el-button type="primary" @click="generateOutline">智能生成大纲</el-button>
-        <el-button type="success" @click="saveOutline">保存大纲</el-button>
-        <el-button type="default" @click="addChapter">添加章节</el-button>
-      </div>
-    </template>
-
-    <el-tree
-      :data="treeData"
-      node-key="id"
-      default-expand-all
-      draggable
-      :allow-drop="allowDrop"
-      :allow-drag="allowDrag"
-      @node-drop="handleDrop"
-    >
-      <template #default="{ node, data }">
-        <span class="custom-tree-node">
-          <span v-if="!data.editing" @dblclick="startEditing(data)">{{ node.label }}</span>
-          <el-input
-            v-else
-            v-model="data.label"
-            @blur="finishEditing(data)"
-            @keyup.enter="finishEditing(data)"
-            size="small"
-            class="node-edit-input"
-          />
-          <span style="margin-left: auto;"> <!-- Added margin-left: auto -->
-            <el-button
-              v-if="data.type === 'chapter'"
-              type="text"
-              size="small"
-              @click="addArticle(data)"
-            >
-              添加文章
-            </el-button>
-            <el-button
-              type="text"
-              size="small"
-              @click="removeNode(node, data)"
-            >
-              删除
-            </el-button>
-          </span>
-        </span>
+  <div class="outline-editor-wrapper">
+    <el-card class="outline-editor-card">
+      <template #header>
+        <div class="card-header-actions">
+          <el-button type="primary" @click="generateOutline">智能生成大纲</el-button>
+          <el-button type="success" @click="saveOutline">保存大纲</el-button>
+          <el-button type="default" @click="addChapter">添加章节</el-button>
+        </div>
       </template>
-    </el-tree>
-  </el-card>
+
+      <el-tree
+        :data="treeData"
+        node-key="id"
+        default-expand-all
+        draggable
+        :allow-drop="allowDrop"
+        :allow-drag="allowDrag"
+        @node-drop="handleDrop"
+        class="outline-tree"
+      >
+        <template #default="{ node, data }">
+          <span class="custom-tree-node">
+            <el-icon class="node-icon">
+              <Folder v-if="data.type === 'chapter'" />
+              <Document v-else />
+            </el-icon>
+
+            <span v-if="!data.editing" :key="data.id + '-label'" class="node-label">{{ node.label }}</span>
+            <el-input
+              v-else
+              :key="data.id + '-input'"
+              v-model="data.label"
+              @blur="finishEditing(data)"
+              @keyup.enter="finishEditing(data)"
+              size="small"
+              class="node-edit-input"
+            />
+
+            <span class="node-actions">
+              <el-button :icon="Plus" @click.stop="addArticle(data)" circle size="small" title="添加文章" />
+              <el-dropdown @command="handleCommand" trigger="click">
+                <el-button :icon="MoreFilled" @click.stop circle size="small" title="更多操作" />
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item :command="{ action: 'rename', node: node, data: data }">重命名</el-dropdown-item>
+                    <el-dropdown-item :command="{ action: 'delete', node: node, data: data }" divided>删除</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </span>
+          </span>
+        </template>
+      </el-tree>
+    </el-card>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch } from 'vue';
 import { ElMessage, ElTree } from 'element-plus';
 import { generateProjectOutline, saveProjectOutline } from '../services/api.ts';
 import type { BookOutline, BookProject, SeriesProject } from '../../../src/types';
+import {
+  Folder,
+  Document,
+  Plus,
+  MoreFilled
+} from '@element-plus/icons-vue';
 
 interface OutlineEditorProps {
   project: BookProject | SeriesProject;
@@ -71,15 +82,15 @@ const treeData = ref<any[]>([]); // Will store the ElTree compatible data
 const convertOutlineToTreeData = (outline: BookOutline) => {
   if (!outline) return [];
   return outline.chapters.map((chapter, chapterIndex) => ({
-    id: `chapter-${chapterIndex}-${Date.now()}`, // Add timestamp for uniqueness
+    id: `chapter-${chapterIndex}-${Date.now()}`,
     label: chapter.title,
     type: 'chapter',
-    editing: false, // Add editing state
+    editing: false,
     children: chapter.articles.map((article, articleIndex) => ({
-      id: `article-${chapterIndex}-${articleIndex}-${Date.now()}`, // Add timestamp for uniqueness
+      id: `article-${chapterIndex}-${articleIndex}-${Date.now()}`,
       label: article.title,
       type: 'article',
-      editing: false, // Add editing state
+      editing: false,
     })),
   }));
 };
@@ -87,7 +98,7 @@ const convertOutlineToTreeData = (outline: BookOutline) => {
 // Convert ElTree data format back to BookOutline
 const convertTreeDataToOutline = (data: any[]): BookOutline => {
   return {
-    title: props.project.outline?.title || props.project.name, // Use existing title or project name
+    title: props.project.outline?.title || props.project.name,
     chapters: data.map(chapterNode => ({
       title: chapterNode.label,
       articles: chapterNode.children ? chapterNode.children.map((articleNode: any) => ({
@@ -105,7 +116,7 @@ watch(() => props.outline, (newOutline) => {
 }, { immediate: true });
 
 // --- Tree Node Operations ---
-let nodeId = 0; // For new nodes, will be incremented
+let nodeId = 0;
 
 const generateUniqueId = (type: 'chapter' | 'article') => {
   return `${type}-${nodeId++}-${Date.now()}`;
@@ -123,18 +134,23 @@ const addChapter = () => {
   ElMessage.success('新章节已添加。');
 };
 
-const addArticle = (chapterData: any) => {
+const addArticle = (nodeData: any) => {
+  // Articles can only be added to chapters
+  if (nodeData.type !== 'chapter') {
+    ElMessage.info('请在章节节点上添加文章');
+    return;
+  }
   const newArticle = {
     id: generateUniqueId('article'),
     label: '新文章',
     type: 'article',
     editing: false,
   };
-  if (!chapterData.children) {
-    chapterData.children = [];
+  if (!nodeData.children) {
+    nodeData.children = [];
   }
-  chapterData.children.push(newArticle);
-  treeData.value = [...treeData.value]; // Force update
+  nodeData.children.push(newArticle);
+  treeData.value = [...treeData.value];
   ElMessage.success('新文章已添加。');
 };
 
@@ -143,7 +159,7 @@ const removeNode = (node: any, data: any) => {
   const children = parent.data.children || parent.data;
   const index = children.findIndex((d: any) => d.id === data.id);
   children.splice(index, 1);
-  treeData.value = [...treeData.value]; // Force update
+  treeData.value = [...treeData.value];
   ElMessage.success('节点已删除。');
 };
 
@@ -153,21 +169,25 @@ const startEditing = (data: any) => {
 
 const finishEditing = (data: any) => {
   data.editing = false;
-  // Optionally, trigger a save or update parent here if needed
-  // For now, changes are reflected in treeData.value
+};
+
+// Handler for the dropdown menu commands
+const handleCommand = (command: { action: string; node: any; data: any }) => {
+  switch (command.action) {
+    case 'rename':
+      startEditing(command.data);
+      break;
+    case 'delete':
+      removeNode(command.node, command.data);
+      break;
+  }
 };
 
 const allowDrop = (draggingNode: any, dropNode: any, type: string) => {
-  // Allow dropping articles into chapters or other articles
   if (draggingNode.data.type === 'article') {
-    if (dropNode.data.type === 'chapter' && type === 'inner') {
-      return true; // Article into chapter
-    }
-    if (dropNode.data.type === 'article' && (type === 'before' || type === 'after')) {
-      return true; // Article before/after another article
-    }
+    if (dropNode.data.type === 'chapter' && type === 'inner') return true;
+    if (dropNode.data.type === 'article' && (type === 'before' || type === 'after')) return true;
   }
-  // Allow dropping chapters before/after other chapters
   if (draggingNode.data.type === 'chapter' && dropNode.data.type === 'chapter' && (type === 'before' || type === 'after')) {
     return true;
   }
@@ -175,13 +195,10 @@ const allowDrop = (draggingNode: any, dropNode: any, type: string) => {
 };
 
 const allowDrag = (draggingNode: any) => {
-  return true; // All nodes can be dragged
+  return true;
 };
 
-const handleDrop = (draggingNode: any, dropNode: any, dropType: string, ev: any) => {
-  // ElTree handles the data manipulation internally for drag and drop
-  // We just need to ensure treeData.value is updated to reflect the new order
-  // For simplicity, we'll re-convert the tree data to outline and emit
+const handleDrop = () => {
   const newOutline = convertTreeDataToOutline(treeData.value);
   emit('update:outline', newOutline);
 };
@@ -193,9 +210,9 @@ const generateOutline = async () => {
     return;
   }
   try {
-    const response = await generateProjectOutline(props.project.name, true); // Overwrite existing
+    const response = await generateProjectOutline(props.project.name, true);
     treeData.value = convertOutlineToTreeData(response.outline);
-    emit('update:outline', response.outline); // Update parent's outline prop
+    emit('update:outline', response.outline);
     ElMessage.success('大纲生成成功！');
   } catch (error: any) {
     console.error('大纲生成失败:', error);
@@ -212,7 +229,7 @@ const saveOutline = async () => {
     const outlineToSave = convertTreeDataToOutline(treeData.value);
     await saveProjectOutline(props.project.name, outlineToSave);
     ElMessage.success('大纲保存成功！');
-    emit('save'); // Notify parent that outline has been saved
+    emit('save');
   } catch (error: any) {
     console.error('大纲保存失败:', error);
     ElMessage.error(`大纲保存失败: ${error.message || '未知错误'}`);
@@ -221,26 +238,74 @@ const saveOutline = async () => {
 </script>
 
 <style scoped>
-.custom-tree-node {
-  flex: 1;
+.outline-editor-wrapper {
+  height: 65vh;
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
-  align-items: center;
-  /* justify-content: space-between; */ /* Removed */
-  font-size: 14px;
-  padding-right: 8px;
+  flex-direction: column;
 }
 
 .outline-editor-card {
-  margin-top: 20px;
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  min-width: 100%
+}
+
+.outline-tree {
+  width: 100%;
+  box-sizing: border-box;
+  display: table;
+  table-layout: fixed;
+}
+
+.custom-tree-node {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 4px 8px;
+}
+
+.node-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.node-label {
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.node-edit-input {
+  flex-grow: 1;
+}
+
+.node-actions {
+  margin-left: auto;
+  padding-left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.custom-tree-node:hover .node-actions {
+  opacity: 1;
 }
 
 .card-header-actions {
   display: flex;
-  justify-content: flex-end; /* Align buttons to the right */
-  gap: 10px; /* Space between buttons */
-}
-
-.node-edit-input {
-  width: 150px; /* Adjust as needed */
+  justify-content: flex-end;
+  gap: 10px;
 }
 </style>

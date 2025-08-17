@@ -11,8 +11,12 @@
       >
         <template #default="{ node, data }">
           <span class="custom-tree-node">
+            <el-icon class="node-icon">
+              <Folder v-if="data.type === 'chapter'" />
+              <Document v-else />
+            </el-icon>
             <span>{{ node.label }}</span>
-            <span v-if="data.type === 'article'">
+            <span v-if="data.type === 'article'" style="margin-left: 8px;">
               <el-tag :type="getStatusTagType(data.status)" size="small">{{ getStatusLabel(data.status) }}</el-tag>
             </span>
           </span>
@@ -27,22 +31,27 @@
         <el-button type="success" @click="saveCurrentArticle">保存当前文章</el-button>
       </div>
 
-      <div v-if="selectedArticle" class="article-editor-area">
-        <h2>{{ selectedArticle.title }}</h2>
-        <p class="article-summary">{{ selectedArticle.summary }}</p>
-        <!-- Rich Text Editor will go here -->
+      <div class="article-editor-area">
+        <template v-if="selectedArticle">
+          <h2>{{ selectedArticle.title }}</h2>
+          <p class="article-summary">{{ selectedArticle.summary }}</p>
+        </template>
+        <template v-else>
+          <h2>请选择文章</h2>
+          <p class="article-summary">请从左侧大纲中选择一篇文章进行编辑。</p>
+        </template>
+
+        <!-- Rich Text Editor is now always present -->
         <div class="rich-text-editor-wrapper">
           <QuillEditor
             ref="quillEditor"
             theme="snow"
             toolbar="full"
             contentType="html"
+            :read-only="false"
             @textChange="onEditorChange"
           />
         </div>
-      </div>
-      <div v-else class="no-article-selected">
-        <p>请从左侧大纲中选择一篇文章进行编辑。</p>
       </div>
     </el-main>
   </el-container>
@@ -52,7 +61,11 @@
 import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue';
 import { ElMessage } from 'element-plus';
 import { startContentGeneration, saveGeneratedProjectContent } from '../services/api.ts';
-import type { BookProject, SeriesProject, GeneratedContent } from '../../../src/types';
+import type { BookProject, SeriesProject, GeneratedContent, BookOutline } from '../../../src/types';
+import {
+  Folder,
+  Document,
+} from '@element-plus/icons-vue';
 
 // Quill imports
 import { QuillEditor } from '@vueup/vue-quill';
@@ -75,9 +88,14 @@ const quillEditor = ref<any>(null);
 
 // Watch selectedArticle to update editor content
 watch(selectedArticle, (newArticle) => {
-  if (newArticle && quillEditor.value) {
-    // Set content when article changes
-    quillEditor.value.setHTML(newArticle.content || '');
+  if (quillEditor.value) {
+    if (newArticle) {
+      // Set content when article changes
+      quillEditor.value.setHTML(newArticle.content || '');
+    } else {
+      // Clear editor when no article is selected
+      quillEditor.value.setHTML('');
+    }
   }
 }, { immediate: true });
 
@@ -108,10 +126,33 @@ const convertContentToTreeData = (content: GeneratedContent) => {
   }));
 };
 
-// Initialize treeData when generatedContent prop changes
-watch(() => props.generatedContent, (newContent) => {
-  if (newContent) {
+// Convert BookOutline to ElTree data format for content editor
+const convertOutlineToTreeDataForContent = (outline: BookOutline) => {
+  if (!outline) return [];
+  return outline.chapters.map((chapter, chapterIndex) => ({
+    id: `chapter-${chapterIndex}`,
+    label: chapter.title,
+    type: 'chapter',
+    children: chapter.articles.map((article, articleIndex) => ({
+      id: `article-${chapterIndex}-${articleIndex}`,
+      label: article.title,
+      type: 'article',
+      status: 'pending',
+      content: '',
+      summary: '',
+      chapterIndex,
+      articleIndex,
+    })),
+  }));
+};
+
+// Initialize treeData when props change
+watch(() => [props.generatedContent, props.project], ([newContent, newProject]) => {
+  if (newContent && newContent.chapters.length > 0) {
     treeData.value = convertContentToTreeData(newContent);
+  } else if (newProject?.outline?.chapters?.length > 0) {
+    // If there's no content but there is an outline, build tree from outline
+    treeData.value = convertOutlineToTreeDataForContent(newProject.outline);
   } else {
     treeData.value = [];
   }
@@ -205,6 +246,20 @@ const saveCurrentArticle = async () => {
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
   overflow: hidden;
+}
+
+.custom-tree-node {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 4px 8px;
+}
+
+.node-icon {
+  margin-right: 8px;
+  font-size: 16px;
 }
 
 .outline-sidebar {
@@ -383,12 +438,5 @@ const saveCurrentArticle = async () => {
   color: var(--color-text); /* Set text color to use theme variable */
 }
 
-.no-article-selected {
-  flex-grow: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #909399;
-  font-size: 16px;
-}
+
 </style>
