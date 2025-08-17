@@ -4,12 +4,15 @@ import path from 'path';
 import * as fs from 'fs';
 import multer from 'multer';
 import { Buffer } from 'node:buffer';
+
 import { getProjectList, createProject, deleteProject, getProjectDetails, getGeneratedProjectContent, saveGeneratedProjectContent,generateProjectOutline, startContentGeneration, saveProjectOutline, publishProject } from './core/projectManager';
 import { ProjectSchema } from './types'; // Import ProjectSchema from types.ts
 import { z } from 'zod';
 
 export const app = express();
 const port = 3000;
+
+const GENDOC_WORKSPACE = path.resolve(process.cwd(), 'gendoc-workspace');
 
 // Multer setup for file uploads
 const uploadDir = path.resolve(process.cwd(), 'gendoc-workspace', 'uploads');
@@ -198,11 +201,12 @@ app.get('/api/download', (req, res) => {
         return res.status(400).json({ message: 'File path is required.' });
     }
 
-    // Security check: Ensure the path is within the allowed directory
-    const allowedDirectory = path.resolve(process.cwd());
-    const absoluteFilePath = path.resolve(filePath);
+    // Resolve the relative path against GENDOC_WORKSPACE
+    const absoluteFilePath = path.resolve(GENDOC_WORKSPACE, filePath);
 
-    if (!absoluteFilePath.startsWith(allowedDirectory)) {
+    // Security check: Ensure the path is within the allowed directory (GENDOC_WORKSPACE)
+    // This check is now more robust as filePath is expected to be relative to GENDOC_WORKSPACE
+    if (!absoluteFilePath.startsWith(GENDOC_WORKSPACE)) {
         return res.status(403).json({ message: 'Access to the specified file path is forbidden.' });
     }
 

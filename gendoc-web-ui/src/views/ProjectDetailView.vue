@@ -27,14 +27,26 @@
               @save="fetchProjectDetails"
             />
           </el-tab-pane>
-          <el-tab-pane label="发布" name="publish"></el-tab-pane>
+          <el-tab-pane label="发布" name="publish">
+            <PublishTab
+              v-if="project"
+              :project-name="project.name"
+              :project-type="project.type"
+            />
+          </el-tab-pane>
         </template>
 
         <!-- Tabs for Templated Projects -->
         <template v-else-if="project.type === 'templated'">
           <el-tab-pane label="文件" name="files"></el-tab-pane>
           <el-tab-pane label="生成" name="generate"></el-tab-pane>
-          <el-tab-pane label="发布" name="publish"></el-tab-pane>
+          <el-tab-pane label="发布" name="publish">
+            <PublishTab
+              v-if="project"
+              :project-name="project.name"
+              :project-type="project.type"
+            />
+          </el-tab-pane>
         </template>
       </el-tabs>
 
@@ -55,6 +67,7 @@ import { ElMessage } from 'element-plus';
 import { ArrowLeft, Loading } from '@element-plus/icons-vue';
 import OutlineEditor from '../components/OutlineEditor.vue';
 import ContentEditor from '../components/ContentEditor.vue';
+import PublishTab from '../components/PublishTab.vue';
 
 const route = useRoute();
 const router = useRouter();

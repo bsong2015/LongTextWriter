@@ -1526,6 +1526,7 @@ describe('startContentGeneration', () => {
 
 describe('publishProject', () => {
   const PROJECTS_DIR = path.resolve(process.cwd(), 'gendoc-workspace', 'projects');
+  const GENDOC_WORKSPACE = path.resolve(process.cwd(), 'gendoc-workspace');
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -1591,7 +1592,7 @@ describe('publishProject', () => {
     });
 
     const result = await publishProject(projectName, 'single-markdown');
-    expect(result).toEqual({ message: `Project published successfully to ${expectedOutputPath}.`, filePath: expectedOutputPath });
+    expect(result).toEqual({ message: `Project published successfully to ${expectedOutputPath}.`, filePath: path.relative(GENDOC_WORKSPACE, expectedOutputPath) });
     expect(fs.mkdirSync).toHaveBeenCalledWith(path.dirname(expectedOutputPath), { recursive: true });
     expect(fs.writeFileSync).toHaveBeenCalledWith(
       expectedOutputPath,
@@ -1647,7 +1648,7 @@ describe('publishProject', () => {
     });
 
     const result = await publishProject(projectName, 'single-markdown');
-    expect(result).toEqual({ message: `Project published successfully to ${expectedOutputPath}.`, filePath: expectedOutputPath });
+    expect(result).toEqual({ message: `Project published successfully to ${expectedOutputPath}.`, filePath: path.relative(GENDOC_WORKSPACE, expectedOutputPath) });
     expect(fs.mkdirSync).toHaveBeenCalledWith(path.dirname(expectedOutputPath), { recursive: true });
     expect(fs.writeFileSync).toHaveBeenCalledWith(
       expectedOutputPath,
@@ -1703,7 +1704,7 @@ describe('publishProject', () => {
     });
 
     const result = await publishProject(projectName, 'multiple-markdown-zip');
-    expect(result).toEqual({ message: `Project published successfully to ${expectedZipPath} (ZIP).`, filePath: expectedZipPath });
+    expect(result).toEqual({ message: `Project published successfully to ${expectedZipPath} (ZIP).`, filePath: path.relative(GENDOC_WORKSPACE, expectedZipPath) });
     expect(fs.mkdirSync).toHaveBeenCalledWith(path.dirname(expectedZipPath), { recursive: true });
     expect(archiver).toHaveBeenCalledWith('zip', { zlib: { level: 9 } });
     // Expect fs.rmSync to be called for temp directory cleanup
@@ -1742,7 +1743,7 @@ describe('publishProject', () => {
     });
 
     const result = await publishProject(projectName, 'single-markdown');
-    expect(result).toEqual({ message: `Project published successfully to ${expectedOutputPath}.`, filePath: expectedOutputPath });
+    expect(result).toEqual({ message: `Project published successfully to ${expectedOutputPath}.`, filePath: path.relative(GENDOC_WORKSPACE, expectedOutputPath) });
     expect(fs.mkdirSync).toHaveBeenCalledWith(path.dirname(expectedOutputPath), { recursive: true });
     expect(fs.writeFileSync).toHaveBeenCalledWith(
       expectedOutputPath,

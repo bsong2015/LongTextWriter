@@ -578,6 +578,8 @@ export async function publishProject(projectName: string, publishType: string): 
   }
 
   let contentToPublish = '';
+  let relativePublishedFilePath: string; // Declare once
+  let relativeZipFilePath: string; // Declare once
 
   async function zipDirectory(sourceDir: string, outPath: string): Promise<string> {
   const archive = archiver('zip', { zlib: { level: 9 } });
@@ -623,7 +625,9 @@ export async function publishProject(projectName: string, publishType: string): 
 
       publishedFilePath = path.resolve(outputDir, `${projectName}.md`);
       fs.writeFileSync(publishedFilePath, contentToPublish, 'utf-8');
-      return { message: t('project_published_success', { outputPath: publishedFilePath }), filePath: publishedFilePath };
+      // Change to relative path
+      relativePublishedFilePath = path.relative(GENDOC_WORKSPACE, publishedFilePath);
+      return { message: t('project_published_success', { outputPath: publishedFilePath }), filePath: relativePublishedFilePath };
 
     case 'series':
       const seriesGeneratedContentPath = getGeneratedContentPath(projectName);
@@ -640,7 +644,9 @@ export async function publishProject(projectName: string, publishType: string): 
         }).join('\n\n');
         publishedFilePath = path.resolve(outputDir, `${projectName}.md`);
         fs.writeFileSync(publishedFilePath, contentToPublish, 'utf-8');
-        return { message: t('project_published_success', { outputPath: publishedFilePath }), filePath: publishedFilePath };
+        // Change to relative path
+        relativePublishedFilePath = path.relative(GENDOC_WORKSPACE, publishedFilePath);
+        return { message: t('project_published_success', { outputPath: publishedFilePath }), filePath: relativePublishedFilePath };
 
       } else if (publishType === 'multiple-markdown-zip') {
         const tempDir = path.resolve(outputDir, 'temp_articles');
@@ -650,17 +656,26 @@ export async function publishProject(projectName: string, publishType: string): 
         fs.mkdirSync(tempDir, { recursive: true });
 
         for (const chapter of seriesGeneratedContent.chapters) {
-          const chapterDir = path.resolve(tempDir, chapter.title.replace(/[^a-zA-Z0-9]/g, '_')); // Sanitize chapter title for directory name
+          const chapterDir = path.resolve(tempDir, chapter.title
+            .toLowerCase()
+            .replace(/\s+/g, '-') // Replace spaces with hyphens
+            .replace(/[^a-z0-9\u4e00-\u9fff-]/g, '')); // Allow alphanumeric, Chinese, and hyphens
           fs.mkdirSync(chapterDir, { recursive: true });
           for (const article of chapter.articles) {
-            const articleFileName = `${article.title.replace(/[^a-zA-Z0-9]/g, '_')}.md`; // Sanitize article title for file name
+            const articleFileName = `${article.title
+              .toLowerCase()
+              .replace(/\s+/g, '-') // Replace spaces with hyphens
+              .replace(/[^a-z0-9\u4e00-\u9fff-]/g, '') // Allow alphanumeric, Chinese, and hyphens
+            }.md`;
             fs.writeFileSync(path.resolve(chapterDir, articleFileName), article.content || '', 'utf-8');
           }
         }
         const zipFilePath = path.resolve(outputDir, `${projectName}.zip`);
         await zipDirectory(tempDir, zipFilePath);
         fs.rmSync(tempDir, { recursive: true, force: true }); // Clean up temp directory
-        return { message: t('project_published_success_zip', { outputPath: zipFilePath }), filePath: zipFilePath };
+        // Change to relative path
+        relativeZipFilePath = path.relative(GENDOC_WORKSPACE, zipFilePath);
+        return { message: t('project_published_success_zip', { outputPath: zipFilePath }), filePath: relativeZipFilePath };
 
       } else {
         throw new Error(t('unsupported_series_publish_type', { publishType: publishType }));
@@ -674,7 +689,9 @@ export async function publishProject(projectName: string, publishType: string): 
       contentToPublish = fs.readFileSync(templatedOutputPath, 'utf-8');
       publishedFilePath = path.resolve(outputDir, `${projectName}.md`);
       fs.writeFileSync(publishedFilePath, contentToPublish, 'utf-8');
-      return { message: t('project_published_success', { outputPath: publishedFilePath }), filePath: publishedFilePath };
+      // Change to relative path
+      relativePublishedFilePath = path.relative(GENDOC_WORKSPACE, publishedFilePath);
+      return { message: t('project_published_success', { outputPath: publishedFilePath }), filePath: relativePublishedFilePath };
 
     default:
       throw new Error(t('unsupported_publish_type', { projectType: (project as Project).type }));
