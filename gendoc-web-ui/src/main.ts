@@ -1,4 +1,5 @@
 import './assets/main.css'
+// import '@tiptap/starter-kit/dist/style.css' // Removed incorrect TipTap base CSS import
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

@@ -18,7 +18,15 @@
               @save="fetchProjectDetails"
             />
           </el-tab-pane>
-          <el-tab-pane label="内容" name="content"></el-tab-pane>
+          <el-tab-pane label="内容" name="content">
+            <ContentEditor
+              v-if="project && (project.type === 'book' || project.type === 'series')"
+              :project="project"
+              :generated-content="generatedContent"
+              @update:generated-content="generatedContent = $event"
+              @save="fetchProjectDetails"
+            />
+          </el-tab-pane>
           <el-tab-pane label="发布" name="publish"></el-tab-pane>
         </template>
 
@@ -31,7 +39,7 @@
       </el-tabs>
 
       <div v-else class="loading-state">
-        <el-spinner size="large" />
+        <el-icon :size="30" class="is-loading"><Loading /></el-icon>
         <p>Loading project details...</p>
       </div>
     </el-main>
@@ -41,22 +49,29 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getProjectDetails } from '../services/api.ts';
+import { getProjectDetails, getGeneratedProjectContent } from '../services/api.ts';
 import type { ProjectDetail } from '../../../src/types';
 import { ElMessage } from 'element-plus';
-import { ArrowLeft } from '@element-plus/icons-vue';
+import { ArrowLeft, Loading } from '@element-plus/icons-vue';
 import OutlineEditor from '../components/OutlineEditor.vue';
+import ContentEditor from '../components/ContentEditor.vue';
 
 const route = useRoute();
 const router = useRouter();
 const projectName = route.params.projectName as string;
 
 const project = ref<ProjectDetail | null>(null);
+const generatedContent = ref<GeneratedContent | null>(null); // Added
 const activeTab = ref('outline'); // Default tab for book/series
 
 async function fetchProjectDetails() {
   try {
     project.value = await getProjectDetails(projectName);
+    // Fetch generated content if it's a book or series project
+    if (project.value && (project.value.type === 'book' || project.value.type === 'series')) {
+      generatedContent.value = await getGeneratedProjectContent(projectName);
+      console.log('ProjectDetailView: fetched generatedContent:', generatedContent.value); // Debug log
+    }
     // Set default tab based on project type if needed
     if (project.value?.type === 'templated') {
       activeTab.value = 'files';

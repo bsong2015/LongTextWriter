@@ -1,0 +1,85 @@
+
+/* In your main CSS file or a dedicated dark mode CSS file */
+
+/* Target the Quill editor container and its content */
+@media (prefers-color-scheme: dark) {
+  .ql-container {
+    background-color: #1a202c; /* Dark background for the editor */
+    color: #e2e8f0; /* Light text color */
+    border-color: #4a5568; /* Darker border */
+  }
+
+  .ql-editor {
+    background-color: #1a202c; /* Dark background for the editable area */
+    color: #e2e8f0; /* Light text color */
+  }
+
+  /* Placeholder text in dark mode */
+  .ql-editor.ql-blank::before {
+    color: #a0aec0; /* Lighter placeholder color */
+  }
+
+  /* Toolbar styling */
+  .ql-toolbar.ql-snow {
+    background-color: #2d3748; /* Darker background for the toolbar */
+    border-color: #4a5568; /* Darker border */
+  }
+
+  /* Toolbar buttons and icons */
+  .ql-toolbar.ql-snow .ql-stroke {
+    stroke: #e2e8f0; /* Light color for icons */
+  }
+
+  .ql-toolbar.ql-snow .ql-fill {
+    fill: #e2e8f0; /* Light color for filled icons */
+  }
+
+  .ql-toolbar.ql-snow .ql-picker {
+    color: #e2e8f0; /* Light color for picker text */
+  }
+
+  .ql-toolbar.ql-snow .ql-picker-label {
+    color: #e2e8f0; /* Light color for picker labels */
+    border-color: #4a5568; /* Darker border */
+  }
+
+  .ql-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-options {
+    background-color: #2d3748; /* Darker background for dropdown options */
+    border-color: #4a5568; /* Darker border */
+  }
+
+  .ql-toolbar.ql-snow .ql-picker-options .ql-picker-item {
+    color: #e2e8f0; /* Light color for dropdown items */
+  }
+
+  .ql-toolbar.ql-snow .ql-active .ql-stroke,
+  .ql-toolbar.ql-snow .ql-active .ql-fill,
+  .ql-toolbar.ql-snow .ql-active .ql-picker-label {
+    color: #63b3ed; /* Accent color for active states */
+    stroke: #63b3ed;
+    fill: #63b3ed;
+  }
+
+  /* Links */
+  .ql-editor a {
+    color: #63b3ed; /* Light blue for links */
+  }
+
+  /* Code blocks */
+  .ql-editor pre.ql-syntax {
+    background-color: #2d3748; /* Darker background for code blocks */
+    color: #f6e05e; /* Yellowish text for code */
+  }
+
+  /* Blockquotes */
+  .ql-editor blockquote {
+    border-left-color: #4a5568; /* Darker border for blockquotes */
+    color: #a0aec0; /* Lighter text for blockquotes */
+  }
+
+  /* Lists */
+  .ql-editor ol li::before,
+  .ql-editor ul li::before {
+    color: #e2e8f0; /* Light color for list markers */
+  }
+}
