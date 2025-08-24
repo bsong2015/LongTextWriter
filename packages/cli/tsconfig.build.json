@@ -1,0 +1,56 @@
+{
+    "compilerOptions": {
+        "target": "es2020",
+        "module": "commonjs",
+        "lib": [
+            "es2020",
+            "dom"
+        ],
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "moduleResolution": "node10",
+        "resolveJsonModule": true,
+        "outDir": "./dist",
+        "baseUrl": "./",
+        "paths": {
+            "@gendoc/shared": [
+                "../shared/src"
+            ]
+        },
+        "allowSyntheticDefaultImports": true,
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "strictNullChecks": true,
+        "strictFunctionTypes": true,
+        "strictBindCallApply": true,
+        "strictPropertyInitialization": true,
+        "strictBuiltinIteratorReturn": true,
+        "alwaysStrict": true,
+        "useUnknownInCatchVariables": true
+    },
+    "files": [
+        "./src/index.ts",
+        "./src/server.test.ts",
+        "./src/server.ts",
+        "./src/commands/ls.ts",
+        "./src/commands/new.ts",
+        "./src/commands/outline.ts",
+        "./src/commands/publish.ts",
+        "./src/commands/rm.ts",
+        "./src/commands/run.ts",
+        "./src/commands/status.ts",
+        "./src/core/projectManager.test.ts",
+        "./src/core/projectManager.ts",
+        "./src/core/prompts.ts",
+        "./src/utils/i18n.ts"
+    ],
+    "include": [
+        "src/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}

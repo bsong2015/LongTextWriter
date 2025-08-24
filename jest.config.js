@@ -2,6 +2,10 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  testMatch: ['<rootDir>/src/**/*.test.ts'],
-  setupFiles: ['dotenv/config'], // To load .env variables for tests
+  transform: {
+    '^.+\.ts?$': 'ts-jest',
+  },
+  testMatch: ['<rootDir>/packages/*/src/**/*.test.ts'],
+  setupFiles: ['dotenv/config'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 };

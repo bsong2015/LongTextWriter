@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run build --workspace=@gendoc/cli && ts-node test_workflow.ts && cross-env MOCK_LLM=true ts-node test_cli_workflow.ts"
   },
   "keywords": [],
   "author": "",

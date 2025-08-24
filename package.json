@@ -1,44 +1,23 @@
 {
-  "name": "gendoc",
+  "name": "gendoc-monorepo",
   "version": "1.0.0",
-  "main": "dist/index.js",
-  "bin": {
-    "gendoc": "dist/index.js"
-  },
+  "private": true,
+  "workspaces": [
+    "packages/cli",
+    "packages/web-ui",
+    "packages/shared",
+    "e2e-tests"
+  ],
   "scripts": {
-    "start": "npm run build && node dist/index.js",
-    "dev": "ts-node src/index.ts",
-    "build": "tsc",
-    "test": "jest",
-    "start:web": "npm run build && node dist/server.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "@inquirer/prompts": "^7.8.2",
-    "@langchain/openai": "^0.6.7",
-    "archiver": "^7.0.1",
-    "commander": "^14.0.0",
-    "dotenv": "^17.2.1",
-    "express": "^4.19.2",
-    "langchain": "^0.3.30",
-    "marked": "^16.1.2",
-    "multer": "^2.0.2",
-    "zod": "^3.25.76"
+    "build": "npm run build --workspace=@gendoc/shared && npm run build --workspace=@gendoc/web-ui && npm run build --workspace=@gendoc/cli",
+    "dev:backend": "npm run build --workspace=@gendoc/shared && npm run start:web --workspace=@gendoc/cli",
+    "dev:frontend": "npm run dev --workspace=@gendoc/web-ui",
+    "dev": "npm-run-all --parallel dev:backend dev:frontend",
+    "start:web": "npm-run-all --parallel dev:backend dev:frontend",
+    "package": "npm run build && npm pack --workspace=@gendoc/cli"
   },
   "devDependencies": {
-    "@types/archiver": "^6.0.3",
-    "@types/express": "^4.17.21",
-    "@types/jest": "^30.0.0",
-    "@types/multer": "^2.0.0",
-    "@types/node": "^24.2.1",
-    "@types/supertest": "^6.0.3",
-    "jest": "^30.0.5",
-    "supertest": "^7.1.4",
-    "ts-jest": "^29.4.1",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.2"
+    "cross-env": "^10.0.0",
+    "npm-run-all": "^4.1.5"
   }
 }

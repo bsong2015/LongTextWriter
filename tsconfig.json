@@ -1,13 +1,14 @@
 {
-  "exclude": ["node_modules", "dist", "gendoc-web-ui", "e2e-tests"],
   "compilerOptions": {
     "target": "es2020",
-    "module": "commonjs",
-    "rootDir": "./src",
-    "outDir": "./dist",
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
+    "module": "esnext",
+    "lib": ["es2020", "dom"],
     "strict": true,
-    "skipLibCheck": true
-  }
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true
+  },
+  "exclude": ["node_modules", "dist"]
 }

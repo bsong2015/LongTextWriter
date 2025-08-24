@@ -2,13 +2,19 @@
 
 GenDoc is a powerful and flexible command-line interface (CLI) tool and a local web-based application designed to automate the creation of long-form, structured documents using Large Language Models (LLMs). It supports various generation modes, including books, templated documents, and article series, streamlining the content creation process from idea to publication.
 
+This project is structured as a monorepo using npm workspaces, containing the following packages:
+*   `packages/cli`: The command-line interface, built with Commander.js. It also includes an Express backend to serve the web UI.
+*   `packages/web-ui`: The Vue.js frontend application.
+*   `packages/shared`: Shared types, configurations, and utilities used by both the CLI and web UI.
+
 **Key Technologies:**
 *   **Runtime:** Node.js
 *   **Language:** TypeScript
+*   **Monorepo Management:** npm Workspaces
 *   **CLI Framework:** Commander.js
-*   **LLM Integration:** LangChain.js
+*   **Web Backend:** Node.js/Express
 *   **Web Frontend:** Vue.js (with Vite)
-*   **Web Backend:** Node.js/Express (reusing core logic)
+*   **LLM Integration:** LangChain.js
 
 **Core Features:**
 *   **Multiple Generation Modes:** Generate complete books, fill predefined Markdown templates, or create article series.
@@ -16,64 +22,51 @@ GenDoc is a powerful and flexible command-line interface (CLI) tool and a local 
 *   **AI-Powered Outlining:** Automatically generate detailed outlines for books or series via CLI or web UI.
 *   **Resumable Generation:** Pause and resume content generation at any time via CLI or web UI.
 *   **Flexible Publishing:** Publish content as single consolidated Markdown files or as separate files via CLI or web UI.
-*   **Structured Workspace:** Organizes all projects and assets within a `gendoc-workspace` directory.
-*   **Web-based User Interface:** Provides an intuitive and visually rich experience for managing, generating, and publishing content, mirroring and enhancing CLI functionalities.
+*   **Structured Workspace:** Organizes all projects and assets within a `gendoc-workspace` directory at the project root.
+*   **Web-based User Interface:** Provides an intuitive and visually rich experience for managing, generating, and publishing content.
 
 # Building and Running
 
-This project is a Node.js application written in TypeScript, with a Vue.js frontend for the web UI.
+This project is a TypeScript monorepo.
 
 **Prerequisites:**
-*   Node.js (v18 or higher recommended)
-*   An OpenAI API Key (to be set in a `.env` file)
+*   Node.js (v20 or higher recommended, see `packages/web-ui/package.json` for specific engine requirements)
+*   An OpenAI API Key (to be set in a `.env` file at the project root)
 
 **Installation:**
 1.  Clone the repository.
-2.  Install dependencies for the main project:
+2.  Install all dependencies for all workspaces from the root directory:
     ```bash
     npm install
-    ```
-3.  Install dependencies for the web UI:
-    ```bash
-    cd gendoc-web-ui
-    npm install
-    cd ..
     ```
 
 **Building:**
-Compile the TypeScript code into JavaScript for the CLI and build the web UI:
+Build all packages from the root directory:
 ```bash
 npm run build
-npm run build --workspace=gendoc-web-ui
+```
+This command will build `shared`, `cli`, and `web-ui` packages in the correct order.
+
+**Running the Application:**
+
+**CLI Only:**
+To run the CLI tool directly, you can use the `dev` script within the `cli` workspace:
+```bash
+npm run dev --workspace=@gendoc/cli -- <command> [args]
+```
+Example:
+```bash
+npm run dev --workspace=@gendoc/cli -- ls
 ```
 
-**Running the Tool:**
-To start the CLI tool, you can use the `start` script which builds and then runs the main entry point:
-```bash
-npm run start
-```
-Alternatively, you can directly execute the compiled JavaScript:
-```bash
-node dist/index.js <command> [args]
-```
-
-To start the web UI (which also runs the backend server):
-```bash
-npm run dev --workspace=gendoc-web-ui
-```
-
-**Development:**
-For CLI development, you can run the tool directly using `ts-node` without prior compilation:
+**Web UI and Backend:**
+To run the web UI and the backend server simultaneously for a complete experience, use the `dev` script from the root:
 ```bash
 npm run dev
 ```
-For web UI development, use the following:
-```bash
-npm run dev --workspace=gendoc-web-ui
-```
+This starts the Express server from the `cli` package and the Vite dev server for the `web-ui` package. You can then access the web interface in your browser (typically at `http://localhost:5173`). The `npm run start:web` command also works as an alternative.
 
 **Key CLI Commands:**
-Once built or run in development mode, the `gendoc` CLI provides the following commands:
 *   `gendoc new`: Interactively create a new generation project.
 *   `gendoc ls`: List all projects in your `gendoc-workspace`.
 *   `gendoc status <project_name>`: Display progress for a specific project.
@@ -82,35 +75,13 @@ Once built or run in development mode, the `gendoc` CLI provides the following c
 *   `gendoc publish <project_name>`: Compile generated content into final Markdown documents.
 *   `gendoc rm <project_name>`: Delete a project and its associated files.
 
-# Web UI Features
-
-The web-based user interface provides a comprehensive set of features for managing and interacting with GenDoc projects:
-
-*   **Project/Document Management:**
-    *   Dashboard displaying all projects with key information (name, status, last modified, word count).
-    *   Search, filter, and sort capabilities for projects.
-    *   Intuitive UI for creating new projects/documents with form-based input.
-    *   Easy access to project actions (edit, delete, view status) via UI elements.
-    *   Visual representation of project status (e.g., progress bars, icons).
-*   **Content Editing & Generation:**
-    *   Dedicated UI for generating and managing outlines with interactive editing (drag-and-drop, add/remove sections).
-    *   Visual feedback during outline generation.
-    *   UI elements to trigger and monitor content generation processes, including forms for configuring `run` commands and display of progress/output logs.
-*   **Publishing:**
-    *   Dedicated section for configuring and initiating publishing.
-    *   Options for output formats (Markdown, HTML, PDF) and configuration forms for publishing destinations.
-    *   Visual feedback on publishing status and option to download generated files.
-*   **Internationalization (i18n):**
-    *   Language selector for switching UI languages. All UI text and messages are localized.
-*   **Configuration:**
-    *   Web-based settings panel for managing application configurations, including editing environment variables and secure handling of sensitive information (e.g., API keys).
-
 # Development Conventions
 
 *   **Language:** The project is primarily developed in TypeScript.
-*   **CLI Structure:** Commands are organized within the `src/commands` directory.
-*   **Core Logic:** Core functionalities and utilities are located in the `src/core` directory, reused by both CLI and web backend.
-*   **Web UI Structure:** The web frontend is located in the `gendoc-web-ui` directory.
+*   **Monorepo Structure:**
+    *   `packages/cli`: Contains the CLI application logic (`src/commands`) and the Express server (`src/server.ts`).
+    *   `packages/web-ui`: Contains the Vue.js frontend application (`src`).
+    *   `packages/shared`: Contains shared code (`src`) intended for use in other packages.
 *   **Project Data:** All generated projects and their assets are managed within the `gendoc-workspace` directory at the project root.
 *   **Configuration:** Project-specific configurations and outlines are stored in `project.json` files within each project's directory inside `gendoc-workspace`.
-*   **Environment Variables:** API keys and other sensitive configurations are expected to be provided via a `.env` file.
+*   **Environment Variables:** API keys and other sensitive configurations are expected to be provided via a `.env` file at the root of the monorepo.
