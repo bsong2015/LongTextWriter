@@ -27,7 +27,6 @@
     <!-- Right Main Content: Editor and Actions -->
     <el-main class="editor-main">
       <div class="editor-actions">
-        <el-button type="primary" @click="generateAllContent">生成全部内容</el-button>
         <el-button type="success" @click="saveCurrentArticle">保存当前文章</el-button>
       </div>
 
@@ -60,7 +59,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue';
 import { ElMessage } from 'element-plus';
-import { startContentGeneration, saveGeneratedProjectContent } from '../services/api.ts';
+import { saveGeneratedProjectContent } from '../services/api.ts';
 import type { BookProject, SeriesProject, GeneratedContent, BookOutline } from '@gendoc/shared';
 import {
   Folder,
@@ -188,20 +187,6 @@ const getStatusLabel = (status: string) => {
 };
 
 // --- API Calls ---
-const generateAllContent = async () => {
-  if (!props.project) {
-    ElMessage.warning('请先选择一个项目。');
-    return;
-  }
-  try {
-    await startContentGeneration(props.project.name);
-    ElMessage.success('内容生成已开始！');
-    // TODO: Implement polling for project status to update UI
-  } catch (error: any) {
-    console.error('内容生成失败:', error);
-    ElMessage.error(`内容生成失败: ${error.message || '未知错误'}`);
-  }
-};
 
 const saveCurrentArticle = async () => {
   if (!props.project || !selectedArticle.value) {

@@ -33,7 +33,9 @@
     "marked": "^16.1.2",
     "multer": "^2.0.2",
     "zod": "^3.25.76",
-    "@gendoc/shared": "^1.0.0"
+    "@gendoc/shared": "^1.0.0",
+    "undici": "^6.19.2",
+    "cli-progress": "^3.12.0"
   },
   "devDependencies": {
     "@types/archiver": "^6.0.3",
@@ -42,6 +44,7 @@
     "@types/multer": "^2.0.0",
     "@types/node": "^24.2.1",
     "@types/supertest": "^6.0.3",
+    "@types/cli-progress": "^3.11.5",
     "copyfiles": "^2.4.1",
     "jest": "^30.0.5",
     "rimraf": "^5.0.7",

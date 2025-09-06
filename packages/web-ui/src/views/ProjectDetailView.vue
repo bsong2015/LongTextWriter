@@ -11,23 +11,49 @@
         <template v-if="project.type === 'book' || project.type === 'series'">
           <el-tab-pane label="大纲" name="outline">
             <OutlineEditor
-              v-if="project && (project.type === 'book' || project.type === 'series')"
+              v-if="project"
               :project="project"
               :outline="project.outline"
+              :readonly="isOutlineLocked"
               @update:outline="project.outline = $event"
               @save="fetchProjectDetails"
+              @request-edit="handleRequestEditOutline"
             />
           </el-tab-pane>
-          <el-tab-pane label="内容" name="content">
+          
+          <el-tab-pane v-if="hasOutline" label="内容" name="content">
+            <!-- Generation Progress View -->
+            <div v-if="isGenerating" class="generation-view">
+              <h3>正在生成内容...</h3>
+              <el-progress
+                :text-inside="true"
+                :stroke-width="24"
+                :percentage="generationPercentage"
+                status="success"
+              />
+              <p>{{ generationStatusText }}</p>
+            </div>
+
+            <!-- Content Editor View -->
             <ContentEditor
-              v-if="project && (project.type === 'book' || project.type === 'series')"
+              v-else-if="hasContent"
               :project="project"
               :generated-content="generatedContent"
               @update:generated-content="generatedContent = $event"
               @save="fetchProjectDetails"
             />
+
+            <!-- Initial Generation Start View -->
+            <div v-else class="generation-view">
+              <h3>内容尚未生成</h3>
+              <p>点击下面的按钮开始自动生成项目的全部内容。</p>
+              <el-button type="primary" size="large" @click="startGeneration" :loading="isGenerating">
+                开始生成内容
+              </el-button>
+            </div>
           </el-tab-pane>
-          <el-tab-pane label="发布" name="publish">
+
+          <el-tab-pane v-if="hasContent" label="发布" name="publish">
             <PublishTab
               v-if="project"
               :project-name="project.name"
@@ -59,11 +85,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getProjectDetails, getGeneratedProjectContent } from '../services/api.ts';
+import { getProjectDetails, getGeneratedProjectContent, startContentGeneration as apiStartGeneration } from '../services/api';
 import type { ProjectDetail, GeneratedContent } from '@gendoc/shared';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { ArrowLeft, Loading } from '@element-plus/icons-vue';
 import OutlineEditor from '../components/OutlineEditor.vue';
 import ContentEditor from '../components/ContentEditor.vue';
@@ -74,41 +100,154 @@ const router = useRouter();
 const projectName = route.params.projectName as string;
 
 const project = ref<ProjectDetail | null>(null);
-const generatedContent = ref<GeneratedContent | undefined>(undefined); // Added
-const activeTab = ref('outline'); // Default tab for book/series
+const generatedContent = ref<GeneratedContent | undefined>(undefined);
+const activeTab = ref('outline');
+
+const isGenerating = ref(false);
+const pollingInterval = ref<number | null>(null);
+
+// --- Computed Properties for UI ---
+
+const hasOutline = computed(() => {
+  return project.value?.outline?.chapters?.some(c => c.title.trim() !== '');
+});
+
+const hasContent = computed(() => !!generatedContent.value);
+
+const isOutlineLocked = computed(() => {
+  return hasContent.value || isGenerating.value;
+});
+
+const generationPercentage = computed(() => {
+  if (project.value?.status.type === 'progress') {
+    return project.value.status.percentage || 0;
+  }
+  return 0;
+});
+
+const generationStatusText = computed(() => {
+  if (project.value?.status.type === 'progress') {
+    return `已完成 ${project.value.status.done} / ${project.value.status.total}`;
+  }
+  return '';
+});
+
+// --- Core Methods ---
 
 async function fetchProjectDetails() {
   try {
     project.value = await getProjectDetails(projectName);
-    // Fetch generated content if it's a book or series project
     if (project.value && (project.value.type === 'book' || project.value.type === 'series')) {
-      generatedContent.value = (await getGeneratedProjectContent(projectName)) || undefined;
-      console.log('ProjectDetailView: fetched generatedContent:', generatedContent.value); // Debug log
+      const content = await getGeneratedProjectContent(projectName);
+      if (content && content.chapters.length > 0) {
+        generatedContent.value = content;
+      } else {
+        generatedContent.value = undefined;
+      }
     }
-    // Set default tab based on project type if needed
     if (project.value?.type === 'templated') {
       activeTab.value = 'files';
     }
   } catch (error) {
-    console.error('Failed to fetch project details:', error);
-    let errorMessage = '未知错误';
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    } else if (typeof error === 'string') {
-      errorMessage = error;
-    }
-    ElMessage.error(`获取项目详情失败: ${errorMessage}`);
+    handleFetchError(error, '获取项目详情失败');
     router.push('/'); // Go back to dashboard on error
   }
+}
+
+async function startGeneration() {
+  try {
+    await apiStartGeneration(projectName);
+    ElMessage.success('内容生成已开始！');
+    isGenerating.value = true;
+    startPolling();
+  } catch (error) {
+    handleFetchError(error, '启动内容生成失败');
+  }
+}
+
+async function handleRequestEditOutline() {
+  try {
+    await ElMessageBox.confirm(
+      '修改大纲将会清空所有已生成的内容，并需要重新生成。是否继续？',
+      '确认操作',
+      {
+        confirmButtonText: '继续',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    );
+
+    // User confirmed.
+    generatedContent.value = undefined;
+
+    if (isGenerating.value) {
+      stopPolling();
+      isGenerating.value = false;
+    }
+    
+    // There is no API to delete content on the server, clearing the frontend is enough to unlock the UI.
+    // The backend content will be overwritten on next generation.
+    ElMessage.success('大纲已解锁。您可以重新编辑，保存后即可再次生成内容。');
+
+  } catch (error) {
+    // User cancelled the dialog, do nothing.
+    ElMessage.info('操作已取消。');
+  }
+}
+
+// --- Polling Logic ---
+
+function startPolling() {
+  if (pollingInterval.value) return; // Already polling
+  pollingInterval.value = window.setInterval(async () => {
+    await fetchProjectDetails();
+    if (generationPercentage.value === 100) {
+      stopPolling();
+      isGenerating.value = false;
+      ElMessage.success('内容生成已完成！');
+      // Fetch final content one last time
+      await fetchProjectDetails();
+    }
+  }, 3000); // Poll every 3 seconds
+}
+
+function stopPolling() {
+  if (pollingInterval.value) {
+    clearInterval(pollingInterval.value);
+    pollingInterval.value = null;
+  }
+}
+
+// --- Helper & Lifecycle ---
+
+function handleFetchError(error: any, message: string) {
+  console.error(`${message}:`, error);
+  let errorMessage = '未知错误';
+  if (error instanceof Error) {
+    errorMessage = error.message;
+  } else if (typeof error === 'string') {
+    errorMessage = error;
+  }
+  ElMessage.error(`${message}: ${errorMessage}`);
 }
 
 function goBack() {
   router.push('/');
 }
 
-onMounted(() => {
-  fetchProjectDetails();
+onMounted(async () => {
+  await fetchProjectDetails();
+  // If generation was already in progress on component mount, start polling
+  if (project.value?.status.type === 'progress' && project.value.status.percentage < 100) {
+    isGenerating.value = true;
+    startPolling();
+  }
 });
+
+onUnmounted(() => {
+  stopPolling();
+});
+
 </script>
 
 <style scoped>

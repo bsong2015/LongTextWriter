@@ -178,12 +178,18 @@ app.post('/api/projects/:projectName/outline/save', async (req, res) => {
 });
 
 // API endpoint to start content generation
-app.post('/api/projects/:projectName/generate-content', async (req, res) => {
+app.post('/api/projects/:projectName/run', (req, res) => {
   try {
     const projectName = req.params.projectName;
-    const result = await startContentGeneration(projectName);
-    res.status(200).json({ message: 'Content generation started successfully.', result });
+    // Don't await, let it run in the background
+    startContentGeneration(projectName).catch(error => {
+      // We need to handle potential errors here, otherwise they'll be unhandled
+      console.error(`Error during content generation for project ${projectName}:`, error);
+      // Optionally, we could update the project status to 'error' here
+    });
+    res.status(202).json({ message: 'Content generation accepted.' });
   } catch (error: any) {
+    // This will catch synchronous errors, e.g., if getProjectDetails throws an error
     console.error('Error starting content generation:', error);
     res.status(400).json({ message: error.message });
   }

@@ -3,66 +3,8 @@ import * as os from 'os';
 import * as path from 'path';
 import { Project, GeneratedContentSchema, ProjectSchema, BookOutline, GeneratedContent, BookProjectSchema, SeriesProjectSchema, TemplatedProjectSchema, BookProject, SeriesProject, TemplatedProject, ProjectDetail, PublishResult, ProjectStatus } from '@gendoc/shared';
 import { t } from '../utils/i18n';
-import { ChatOpenAI } from '@langchain/openai';
-import { HumanMessage, SystemMessage, AIMessage } from '@langchain/core/messages';
-import { zodToJsonSchema } from 'zod-to-json-schema';
-import { PROMPT_OUTLINE_SYSTEM, PROMPT_OUTLINE_HUMAN, PROMPT_EXTRACT_OUTLINE_SYSTEM, PROMPT_ARTICLE_SYSTEM, PROMPT_SUMMARY_ARTICLE_SYSTEM, PROMPT_SUMMARY_CHAPTER_SYSTEM, PROMPT_TEMPLATED_SYSTEM, PROMPT_TEMPLATED_HUMAN } from '../core/prompts';
+import { generateOutline as llmGenerateOutline, generateArticleContent, summarizeText } from './llmService';
 import { BookOutlineSchema } from '@gendoc/shared'; // Explicitly import BookOutlineSchema
-
-const isMockLLM = process.env.MOCK_LLM === 'true';
-
-class MockChatOpenAI {
-    async invoke(messages: any[]): Promise<AIMessage> {
-        console.log("MOCK LLM: Returning dummy response.");
-
-        const messageContent = messages.map(msg => msg.content).join('\n');
-
-        // For outline generation
-        if (messageContent.includes('outline')) {
-            const mockOutline: BookOutline = {
-                title: "Mock Outline Title",
-                chapters: [
-                    {
-                        title: "Mock Chapter 1",
-                        articles: [
-                            { title: "Mock Article 1.1" },
-                            { title: "Mock Article 1.2" }
-                        ]
-                    },
-                    {
-                        title: "Mock Chapter 2",
-                        articles: [
-                            { title: "Mock Article 2.1" }
-                        ]
-                    }
-                ]
-            };
-            return new AIMessage({
-                content: `\
-${JSON.stringify(mockOutline, null, 2)}\
-`
-            });
-        }
-
-        // For article generation
-        if (messageContent.includes('PROMPT_ARTICLE_SYSTEM')) {
-            return new AIMessage({ content: "This is mock generated article content based on the context." });
-        }
-
-        // For summary generation
-        if (messageContent.includes('PROMPT_SUMMARY_ARTICLE_SYSTEM') || messageContent.includes('PROMPT_SUMMARY_CHAPTER_SYSTEM')) {
-            return new AIMessage({ content: "This is a mock summary of the provided content." });
-        }
-
-        // For templated generation
-        if (messageContent.includes('PROMPT_TEMPLATED_SYSTEM')) {
-            return new AIMessage({ content: "This is mock templated content filling a placeholder." });
-        }
-
-        // Default fallback
-        return new AIMessage({ content: "Default mock response from LLM." });
-    }
-}
 
 
 let GENDOC_WORKSPACE: string;
@@ -279,84 +221,15 @@ export async function generateProjectOutline(projectName: string, overwrite: boo
     throw new Error(t('error_reading_project_json', { projectName: projectName }));
   }
 
-  // Check for existing outline and overwrite flag
   if (project.outline && !overwrite) {
     throw new Error(t('outline_exists_no_overwrite'));
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error(t('openai_api_key_not_set'));
-  }
-
-  const chat = isMockLLM
-    ? new MockChatOpenAI()
-    : new ChatOpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-        model: process.env.OPENAI_MODEL || 'gpt-4o',
-        temperature: 0.7,
-        configuration: { 
-          baseURL: process.env.OPENAI_API_BASE,
-        },
-      });
-
-  const jsonSchema = zodToJsonSchema(BookOutlineSchema, "BookOutline");
-  const zodSchemaString = JSON.stringify(jsonSchema);
-  let promptMessages: (SystemMessage | HumanMessage)[] = [];
-
-  // --- Logic Branching based on Project Type ---
-  if (project.type === 'book' || project.type === 'series') {
-    const bookOrSeriesProject = project as BookProject | SeriesProject;
-    promptMessages = [
-      new SystemMessage(PROMPT_OUTLINE_SYSTEM(bookOrSeriesProject.type, zodSchemaString)),
-      new HumanMessage(PROMPT_OUTLINE_HUMAN(
-        bookOrSeriesProject.idea.language,
-        bookOrSeriesProject.idea.summary,
-        bookOrSeriesProject.idea.prompt,
-        bookOrSeriesProject.type
-      )),
-    ];
-  } else if (project.type === 'templated') {
-    const templatedProject = project as TemplatedProject;
-    if (!templatedProject.template) {
-      throw new Error(t('no_template_file_configured', { projectName }));
-    }
-    const templatePath = path.resolve(PROJECTS_DIR, projectName, templatedProject.template);
-    if (!fs.existsSync(templatePath)) {
-      throw new Error(t('template_file_not_found', { path: templatePath }));
-    }
-    const templateContent = fs.readFileSync(templatePath, 'utf-8');
-    promptMessages = [
-      new SystemMessage(PROMPT_EXTRACT_OUTLINE_SYSTEM(zodSchemaString)),
-      new HumanMessage(templateContent),
-    ];
-  } else {
-    assertNever(project as never);
-  }
-
-  // --- Common Logic for LLM call, validation, and saving ---
   try {
-    const response = await chat.invoke(promptMessages);
-    const content = response.content.toString();
-    const cleanedContent = content.replace(/```json/g, '').replace(/```/g, '').trim();
-
-    let outlineJson;
-    try {
-      outlineJson = JSON.parse(cleanedContent);
-    } catch (parseError) {
-      throw new Error(t('ai_response_parse_error'));
-    }
-
-    const validationResult = BookOutlineSchema.safeParse(outlineJson);
-
-    if (!validationResult.success) {
-      throw new Error(t('outline_schema_mismatch', { errors: JSON.stringify(validationResult.error.errors) }));
-    }
-
-    project.outline = validationResult.data;
+    const outline = await llmGenerateOutline(project, PROJECTS_DIR);
+    project.outline = outline;
     fs.writeFileSync(projectJsonPath, JSON.stringify(project, null, 2));
-
-    return validationResult.data; // Return the generated outline
-
+    return outline; // Return the generated outline
   } catch (error: any) {
     console.error('An error occurred during outline generation:', error);
     throw new Error(t('outline_generation_failed', { error: error.message }));
@@ -365,7 +238,15 @@ export async function generateProjectOutline(projectName: string, overwrite: boo
 
 // --- Content Generation ---
 
-async function runOutlineBasedGeneration(project: Project) {
+export type ProgressPayload = {
+  total: number;
+  done: number;
+  currentTitle: string;
+};
+
+export type ProgressCallback = (payload: ProgressPayload) => void;
+
+async function runOutlineBasedGeneration(project: Project, onProgress?: ProgressCallback) {
   if (!project.outline) {
     throw new Error(t('no_outline_found', { projectName: project.name }));
   }
@@ -386,20 +267,8 @@ async function runOutlineBasedGeneration(project: Project) {
     });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error(t('openai_api_key_not_set'));
-  }
-
-  const chat = isMockLLM
-    ? new MockChatOpenAI()
-    : new ChatOpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-        model: process.env.OPENAI_MODEL || 'gpt-4o',
-        temperature: 0.7,
-        configuration: { // Support for custom endpoints
-          baseURL: process.env.OPENAI_API_BASE,
-        },
-      });
+  const totalArticles = content.chapters.reduce((acc, ch) => acc + ch.articles.length, 0);
+  let doneArticles = content.chapters.reduce((acc, ch) => acc + ch.articles.filter(art => art.status === 'done').length, 0);
 
   for (const chapter of content.chapters) {
     for (const article of chapter.articles) {
@@ -407,24 +276,18 @@ async function runOutlineBasedGeneration(project: Project) {
         try {
           article.status = 'writing';
           saveGeneratedContent(project.name, content);
+          onProgress?.({ total: totalArticles, done: doneArticles, currentTitle: article.title });
 
           const context = buildContext(project, content, chapter.title, article.title);
-          const articlePrompt = [
-            new SystemMessage(PROMPT_ARTICLE_SYSTEM),
-            new HumanMessage(context),
-          ];
-          const articleResponse = await chat.invoke(articlePrompt);
-          article.content = articleResponse.content.toString();
+          article.content = await generateArticleContent(context);
 
-          const summaryPrompt = [
-            new SystemMessage(PROMPT_SUMMARY_ARTICLE_SYSTEM),
-            new HumanMessage(article.content),
-          ];
-          const summaryResponse = await chat.invoke(summaryPrompt);
-          article.summary = summaryResponse.content.toString();
+          article.summary = await summarizeText(article.content, 'article');
 
           article.status = 'done';
+          doneArticles++;
           saveGeneratedContent(project.name, content);
+          onProgress?.({ total: totalArticles, done: doneArticles, currentTitle: article.title });
+
 
         } catch (error: any) {
           article.status = 'error';
@@ -438,12 +301,7 @@ async function runOutlineBasedGeneration(project: Project) {
         const chapterArticles = chapter.articles.filter((a: ArticleGenerated) => a.status === 'done');
         if (chapterArticles.length === chapter.articles.length) {
             const articlesForSummary = chapterArticles.map((a: ArticleGenerated) => `Article: ${a.title}\nSummary: ${a.summary}`).join('\n\n');
-            const chapterSummaryPrompt = [
-                new SystemMessage(PROMPT_SUMMARY_CHAPTER_SYSTEM),
-                new HumanMessage(articlesForSummary)
-            ];
-            const chapterSummaryResponse = await chat.invoke(chapterSummaryPrompt);
-            chapter.summary = chapterSummaryResponse.content.toString();
+            chapter.summary = await summarizeText(articlesForSummary, 'chapter');
             saveGeneratedContent(project.name, content);
         }
     }
@@ -452,7 +310,7 @@ async function runOutlineBasedGeneration(project: Project) {
   return content;
 }
 
-export async function startContentGeneration(projectName: string) {
+export async function startContentGeneration(projectName: string, onProgress?: ProgressCallback) {
   const project = getProjectDetails(projectName);
   if (!project) {
     throw new Error(t('project_not_found_error', { projectName: projectName }));
@@ -462,7 +320,7 @@ export async function startContentGeneration(projectName: string) {
     case 'book':
     case 'series':
     case 'templated':
-      return await runOutlineBasedGeneration(project);
+      return await runOutlineBasedGeneration(project, onProgress);
     default:
       return assertNever(project as never);
   }

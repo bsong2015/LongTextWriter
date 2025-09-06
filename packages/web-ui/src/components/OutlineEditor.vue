@@ -2,7 +2,7 @@
   <div class="outline-editor-wrapper">
     <el-card class="outline-editor-card">
       <template #header>
-        <div class="card-header-actions">
+        <div v-if="!readonly" class="card-header-actions">
           <!-- Buttons for Book/Series -->
           <template v-if="!isTemplated">
             <el-button type="primary" @click="generateOutline">智能生成大纲</el-button>
@@ -14,13 +14,24 @@
             <el-button type="primary" @click="generateOutline">从模板提取大纲</el-button>
           </template>
         </div>
+        <div v-else class="card-header-actions readonly-header">
+          <el-alert
+            title="只读模式"
+            description="内容已生成或正在生成中，大纲已锁定。"
+            type="info"
+            show-icon
+            :closable="false"
+            style="flex-grow: 1; margin-right: 10px;"
+          />
+          <el-button @click="$emit('request-edit')" type="warning">修改大纲</el-button>
+        </div>
       </template>
 
       <el-tree
         :data="treeData"
         node-key="id"
         default-expand-all
-        :draggable="!isTemplated"
+        :draggable="!isTemplated && !readonly"
         :allow-drop="allowDrop"
         :allow-drag="allowDrag"
         @node-drop="handleDrop"
@@ -44,7 +55,7 @@
               class="node-edit-input"
             />
 
-            <span v-if="!isTemplated" class="node-actions">
+            <span v-if="!isTemplated && !readonly" class="node-actions">
               <el-button :icon="Plus" @click.stop="addArticle(data)" circle size="small" title="添加文章" />
               <el-dropdown @command="handleCommand" trigger="click">
                 <el-button :icon="MoreFilled" @click.stop circle size="small" title="更多操作" />
@@ -78,10 +89,12 @@ import {
 interface OutlineEditorProps {
   project: ProjectDetail;
   outline?: BookOutline; // Initial outline data
+  readonly?: boolean;
 }
 
 const props = defineProps<OutlineEditorProps>();
-const emit = defineEmits(['update:outline', 'save']);
+
+const emit = defineEmits(['update:outline', 'save', 'request-edit']);
 
 const treeData = ref<any[]>([]);
 
@@ -124,7 +137,7 @@ watch(() => props.outline, (newOutline) => {
   }
 }, { immediate: true, deep: true });
 
-// --- Tree Node Operations (Disabled for templated projects) ---
+// --- Tree Node Operations (Disabled for templated projects or when readonly) ---
 let nodeId = 0;
 
 const generateUniqueId = (type: 'chapter' | 'article') => {
@@ -132,7 +145,7 @@ const generateUniqueId = (type: 'chapter' | 'article') => {
 };
 
 const addChapter = () => {
-  if (isTemplated.value) return;
+  if (isTemplated.value || props.readonly) return;
   const newChapter = {
     id: generateUniqueId('chapter'),
     label: '新章节',
@@ -145,7 +158,7 @@ const addChapter = () => {
 };
 
 const addArticle = (nodeData: any) => {
-  if (isTemplated.value) return;
+  if (isTemplated.value || props.readonly) return;
   if (nodeData.type !== 'chapter') {
     ElMessage.info('请在章节节点上添加文章');
     return;
@@ -165,7 +178,7 @@ const addArticle = (nodeData: any) => {
 };
 
 const removeNode = (node: any, data: any) => {
-  if (isTemplated.value) return;
+  if (isTemplated.value || props.readonly) return;
   const parent = node.parent;
   const children = parent.data.children || parent.data;
   const index = children.findIndex((d: any) => d.id === data.id);
@@ -175,7 +188,7 @@ const removeNode = (node: any, data: any) => {
 };
 
 const startEditing = (data: any) => {
-  if (isTemplated.value) return;
+  if (isTemplated.value || props.readonly) return;
   data.editing = true;
 };
 
@@ -184,7 +197,7 @@ const finishEditing = (data: any) => {
 };
 
 const handleCommand = (command: { action: string; node: any; data: any }) => {
-  if (isTemplated.value) return;
+  if (isTemplated.value || props.readonly) return;
   switch (command.action) {
     case 'rename':
       startEditing(command.data);
@@ -196,7 +209,7 @@ const handleCommand = (command: { action: string; node: any; data: any }) => {
 };
 
 const allowDrop = (draggingNode: any, dropNode: any, type: string) => {
-  if (isTemplated.value) return false;
+  if (isTemplated.value || props.readonly) return false;
   if (draggingNode.data.type === 'article') {
     if (dropNode.data.type === 'chapter' && type === 'inner') return true;
     if (dropNode.data.type === 'article' && (type === 'before' || type === 'after')) return true;
@@ -208,17 +221,18 @@ const allowDrop = (draggingNode: any, dropNode: any, type: string) => {
 };
 
 const allowDrag = (draggingNode: any) => {
-  return !isTemplated.value;
+  return !isTemplated.value && !props.readonly;
 };
 
 const handleDrop = () => {
-  if (isTemplated.value) return;
+  if (isTemplated.value || props.readonly) return;
   const newOutline = convertTreeDataToOutline(treeData.value);
   emit('update:outline', newOutline);
 };
 
 // --- API Calls ---
 const generateOutline = async () => {
+  if (props.readonly) return;
   if (!props.project) {
     ElMessage.warning('请先选择一个项目。');
     return;
@@ -236,6 +250,7 @@ const generateOutline = async () => {
 };
 
 const saveOutline = async () => {
+  if (props.readonly) return;
   if (isTemplated.value || !props.project || !treeData.value.length) {
     ElMessage.warning('没有大纲数据可保存。');
     return;
@@ -322,5 +337,9 @@ const saveOutline = async () => {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.card-header-actions.readonly-header {
+  width: 100%;
 }
 </style>

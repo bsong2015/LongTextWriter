@@ -21,7 +21,7 @@ export const saveProjectOutline = (projectName: string, outline: BookOutline): P
 // Content Management
 export const getGeneratedProjectContent = (projectName: string): Promise<GeneratedContent | null> => apiClient.get(`/projects/${projectName}/content`).then(res => res.data);
 export const saveGeneratedProjectContent = (projectName: string, content: string): Promise<{ message: string }> => apiClient.put(`/projects/${projectName}/content`, { content }).then(res => res.data);
-export const startContentGeneration = (projectName: string): Promise<{ message: string; result: any }> => apiClient.post(`/projects/${projectName}/generate-content`).then(res => res.data);
+export const startContentGeneration = (projectName: string): Promise<{ message: string }> => apiClient.post(`/projects/${projectName}/run`).then(res => res.data);
 
 // Publishing
 export const publishProject = (projectName: string, publishType: string): Promise<PublishResult> => apiClient.post(`/projects/${projectName}/publish`, { publishType }).then(res => res.data);

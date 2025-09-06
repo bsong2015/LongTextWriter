@@ -15,65 +15,51 @@
         <el-button type="primary" @click="showNewProjectDialog = true">立即创建</el-button>
       </el-empty>
 
-      <!-- 使用栅格系统进行响应式布局 -->
-      <el-row v-else :gutter="24">
-        <el-col
-          v-for="project in projects"
-          :key="project.name"
-          :xl="6"
-          :lg="6"
-          :md="8"
-          :sm="12"
-          :xs="24"
-          class="project-col"
-        >
-          <!-- 使用 el-card 美化卡片 -->
-          <el-card class="project-card" shadow="hover" @click="navigateToProject(project.name)">
-            <!-- 卡片头部：标题和操作 -->
-            <template #header>
-              <div class="card-header">
-                <div class="project-title-group">
-                  <el-icon class="project-icon" :size="20">
-                    <component :is="getProjectIcon(project.type)" />
-                  </el-icon>
-                  <span class="project-name">{{ project.name }}</span>
-                </div>
-                <el-popconfirm
-                  title="确定要删除这个项目吗？"
-                  confirm-button-text="确定"
-                  cancel-button-text="取消"
-                  @confirm.stop="handleDeleteProject(project.name)"
-                  @cancel.stop
-                >
-                  <template #reference>
-                    <el-button
-                      class="delete-button"
-                      type="danger"
-                      :icon="ElIconDelete"
-                      size="small"
-                      circle
-                      @click.stop
-                    />
-                  </template>
-                </el-popconfirm>
-              </div>
-            </template>
+      <!-- 新的列表视图 -->
+      <el-table v-else :data="projects" style="width: 100%" size="large" class="project-table">
+        <el-table-column prop="name" label="项目名称" min-width="300">
+          <template #default="{ row }">
+            <a class="project-name-link" @click="navigateToProject(row.name)">
+              <el-icon class="project-icon"><component :is="getProjectIcon(row.type)" /></el-icon>
+              <span>{{ row.name }}</span>
+            </a>
+          </template>
+        </el-table-column>
 
-            <!-- 卡片主体：内容预览 (暂时省略 el-image) -->
-            <div class="card-body">
-              <el-tag size="small" :type="getProjectTypeTagType(project.type)">{{ getProjectTypeLabel(project.type) }}</el-tag>
-            </div>
+        <el-table-column prop="type" label="类型" width="150">
+          <template #default="{ row }">
+            <el-tag :type="getProjectTypeTagType(row.type)" size="small">{{ getProjectTypeLabel(row.type) }}</el-tag>
+          </template>
+        </el-table-column>
 
-            <!-- 卡片底部：元信息 -->
-            <div class="card-footer">
-              <span>创建于：{{ project.createdAt ? new Date(project.createdAt).toLocaleDateString() : 'N/A' }}</span>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+        <el-table-column prop="createdAt" label="创建日期" width="180">
+          <template #default="{ row }">
+            {{ row.createdAt ? new Date(row.createdAt).toLocaleDateString() : 'N/A' }}
+          </template>
+        </el-table-column>
+
+        <el-table-column label="操作" width="180" align="right">
+          <template #default="{ row }">
+            <el-button size="small" @click="navigateToProject(row.name)">打开</el-button>
+            <el-popconfirm
+              title="确定要删除这个项目吗？"
+              confirm-button-text="确定"
+              cancel-button-text="取消"
+              @confirm="handleDeleteProject(row.name)"
+            >
+              <template #reference>
+                <el-button
+                  type="danger"
+                  size="small"
+                >删除</el-button>
+              </template>
+            </el-popconfirm>
+          </template>
+        </el-table-column>
+      </el-table>
     </el-main>
 
-    <!-- New Project Dialog -->
+    <!-- New Project Dialog (no changes needed here) -->
     <el-dialog v-model="showNewProjectDialog" title="新建项目" width="600px" @close="resetForm">
       <el-steps :active="activeStep" finish-status="success" simple style="margin-bottom: 20px">
         <el-step title="选择类型" />
@@ -145,9 +131,9 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
-import { getProjects, createProject, deleteProject, uploadFile } from '../services/api.ts';
+import { getProjects, createProject, deleteProject, uploadFile } from '../services/api';
 import type { Project, ProjectIdea } from '@gendoc/shared';
-import type { FormInstance, UploadUserFile, UploadRawFile, UploadInstance, UploadFile } from 'element-plus';
+import type { FormInstance, UploadUserFile } from 'element-plus';
 import { ElMessage } from 'element-plus';
 import { Delete as ElIconDelete } from '@element-plus/icons-vue';
 import * as ElIcons from '@element-plus/icons-vue';
@@ -362,7 +348,7 @@ onMounted(() => {
 <style scoped>
 .project-list-container {
   padding: 24px;
-  background-color: #f0f2f5; /* 使用柔和的灰色背景代替纯黑 */
+  background-color: #f0f2f5; 
   min-height: 100vh;
 }
 
@@ -371,11 +357,11 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
-  padding: 0 20px; /* Adjust padding to match el-header */
-  max-width: 1200px; /* Max width for centering */
+  padding: 0 20px; 
+  max-width: 1200px; 
   margin-left: auto;
   margin-right: auto;
-  gap: 20px; /* Add space between flex items */
+  gap: 20px; 
 }
 
 .page-title {
@@ -385,83 +371,31 @@ onMounted(() => {
 }
 
 .project-main-content {
-  padding: 0 20px; /* Adjust padding to match el-main */
-  max-width: 1200px; /* Max width for centering */
+  padding: 0 20px; 
+  max-width: 1200px; 
   margin-left: auto;
   margin-right: auto;
 }
 
-.project-col {
-  margin-bottom: 24px; /* 列的底部外边距，确保换行时有间距 */
+.project-table {
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.project-card {
-  border-radius: 8px; /* 添加圆角 */
-  transition: all 0.3s ease; /* 为所有过渡效果添加动画 */
+.project-name-link {
+  font-weight: 500;
+  color: var(--el-color-primary);
   cursor: pointer;
-}
-
-/* 添加悬停效果 */
-.project-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
+  display: inline-flex;
   align-items: center;
-  font-weight: bold;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--el-border-color-light);
-  margin-bottom: 10px;
+  gap: 8px;
 }
 
-.project-title-group {
-  display: flex;
-  align-items: center;
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #333;
+.project-name-link:hover {
+  text-decoration: underline;
 }
 
 .project-icon {
-  margin-right: 8px;
-  color: #409eff; /* Element Plus primary color */
-}
-
-.project-name {
-  flex-grow: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 默认隐藏删除按钮 */
-.delete-button {
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-/* 鼠标悬停在卡片上时显示删除按钮 */
-.project-card:hover .delete-button {
-  opacity: 1;
-}
-
-.card-body {
-  padding: 0;
-  margin-bottom: 10px; /* Add some space below the tag */
-}
-
-.card-footer {
-  padding: 14px 0 0 0; /* Adjust padding */
-  font-size: 13px;
-  color: #909399;
-  border-top: 1px solid #ebeef5;
-  margin-top: 10px; /* Add some space above the footer */
-}
-
-.created-at {
-  /* No specific style needed here, as it's inside card-footer */
+  font-size: 16px;
 }
 </style>
