@@ -303,6 +303,11 @@ onUnmounted(() => {
 }
 /* --- END FIX --- */
 
+.generation-view h3,
+.generation-view p {
+  color: var(--el-text-color-primary);
+}
+
 .loading-state {
   display: flex;
   flex-direction: column;

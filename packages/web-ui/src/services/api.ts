@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Project, ProjectIdea, BookOutline, PublishResult, ProjectDetail, ProjectStatus, GeneratedContent } from '@gendoc/shared';
+import type { Project, ProjectIdea, BookOutline, PublishResult, ProjectDetail, ProjectStatus, GeneratedContent, AppConfig } from '@gendoc/shared';
 
 const apiClient = axios.create({
   baseURL: '/api', // The backend is served on the same host

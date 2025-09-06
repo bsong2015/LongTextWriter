@@ -55,7 +55,7 @@ import { ref, onMounted } from 'vue';
 import { getConfig, updateConfig } from '@/services/api';
 import type { AppConfig } from '@gendoc/shared';
 
-const config = ref<Partial<AppConfig>>({
+const config = ref<AppConfig>({
   llm: {
     apiKey: '',
     model: 'gpt-4-turbo',
