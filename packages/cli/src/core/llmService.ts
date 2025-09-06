@@ -31,11 +31,11 @@ let isClientInfoLogged = false;
 class MockChatOpenAI {
     async invoke(messages: any[]): Promise<AIMessage> {
         // In mock mode, we also log the prompt for consistency
-        console.log('--- MOCK LLM PROMPT ---');
+        console.log(t('llm_mock_prompt_log_header'));
         console.log(JSON.stringify(messages, null, 2));
-        console.log('-----------------------');
+        console.log(t('llm_mock_prompt_log_footer'));
 
-        console.log("MOCK LLM: Returning dummy response.");
+        console.log(t('llm_mock_returning_dummy_response'));
         const messageContent = messages.map(msg => msg.content).join('\n');
 
         if (messageContent.includes('outline')) {
@@ -54,7 +54,7 @@ class MockChatOpenAI {
         if (messageContent.includes(PROMPT_SUMMARY_ARTICLE_SYSTEM) || messageContent.includes(PROMPT_SUMMARY_CHAPTER_SYSTEM)) {
             return new AIMessage({ content: "This is a mock summary of the provided content." });
         }
-        return new AIMessage({ content: "Default mock response from LLM." });
+        return new AIMessage({ content: t('llm_default_mock_response') });
     }
 }
 
@@ -66,24 +66,24 @@ function getChatClient() {
   }
 
   if (!isClientInfoLogged) {
-    console.log('--- LLM Client Info ---');
-    console.log(`Using Mock LLM: ${isMockLLM}`);
+    console.log(t('llm_client_info_header'));
+    console.log(t('llm_client_info_mock_llm', { isMockLLM: String(isMockLLM) }));
     if (!isMockLLM) {
-        console.log(`Model: ${config.llm.model || 'gpt-4o'}`);
+        console.log(t('llm_client_info_model', { model: config.llm.model || 'gpt-4o' }));
         const apiBaseUrl = config.llm.baseUrl;
         if (apiBaseUrl) {
-            console.log(`Using API Base: ${apiBaseUrl}`);
+            console.log(t('llm_client_info_api_base', { apiBaseUrl }));
         }
         const proxyUrl = config.llm.proxy;
         if (proxyUrl) {
-            console.log(`Using Proxy: Yes, Address: ${proxyUrl}`);
+            console.log(t('llm_client_info_proxy_yes', { proxyUrl }));
             // Set global dispatcher for undici
             setGlobalDispatcher(new ProxyAgent(proxyUrl)); // Added this line
         } else {
-            console.log('Using Proxy: No');
+            console.log(t('llm_client_info_proxy_no'));
         }
     }
-    console.log('-----------------------');
+    console.log(t('llm_client_info_footer'));
     isClientInfoLogged = true;
   }
 
@@ -154,7 +154,7 @@ export async function generateOutline(project: Project, projectsDir: string): Pr
     }
     return validationResult.data;
   } catch (error: any) {
-    console.error('An error occurred during outline generation:', error);
+    console.error(t('llm_error_generating_outline'), error);
     throw new Error(t('outline_generation_failed', { error: error.message }));
   }
 }

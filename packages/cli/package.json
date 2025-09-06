@@ -14,7 +14,8 @@
     "dev": "ts-node src/index.ts",
     "clean": "rimraf dist public",
     "copy:ui": "copyfiles -u 3 ../web-ui/dist/**/* public",
-    "build": "npm run clean && npm run copy:ui && cross-env NODE_ENV=production tsc -p .",
+    "copy:locales": "copyfiles -u 2 ../../locales/**/* dist/locales",
+    "build": "npm run clean && npm run copy:ui && npm run copy:locales && cross-env NODE_ENV=production tsc -p .",
     "test": "jest --config ../../jest.config.js",
     "start:web": "ts-node -r tsconfig-paths/register src/server.ts"
   },

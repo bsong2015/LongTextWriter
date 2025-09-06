@@ -4,14 +4,15 @@ import {
   getGlobalConfigValue,
   setGlobalConfig,
 } from '../core/configManager';
+import { t } from '../utils/i18n';
 
 export function createConfigCommand() {
   const config = new Command('config')
-    .description('Manage global application configuration');
+    .description(t('config_manage_description'));
 
   config
     .command('list')
-    .description('List all global configuration values')
+    .description(t('config_list_description'))
     .action(() => {
       const config = getGlobalConfig();
       console.log(JSON.stringify(config, null, 2));
@@ -19,19 +20,19 @@ export function createConfigCommand() {
 
   config
     .command('get <key>')
-    .description('Get a specific configuration value using dot notation (e.g., llm.apiKey)')
+    .description(t('config_get_description'))
     .action((key: string) => {
       const value = getGlobalConfigValue(key);
       if (value !== undefined) {
         console.log(value);
       } else {
-        console.log(`Configuration key '${key}' not found.`);
+        console.log(t('config_get_not_found', { key }));
       }
     });
 
   config
     .command('set <key> <value>')
-    .description('Set a specific configuration value using dot notation (e.g., llm.apiKey "sk-...")')
+    .description(t('config_set_description'))
     .action((key: string, value: string) => {
       // Attempt to parse value as boolean or number
       let parsedValue: any = value;
@@ -44,7 +45,7 @@ export function createConfigCommand() {
       }
 
       setGlobalConfig(key, parsedValue);
-      console.log(`Set '${key}' to '${parsedValue}'`);
+      console.log(t('config_set_success', { key, value: parsedValue }));
     });
 
   return config;

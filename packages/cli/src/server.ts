@@ -98,7 +98,12 @@ app.delete('/api/projects/:name', (req, res) => {
 
 app.get('/api/locales/:lang', (req, res) => {
   const lang = req.params.lang;
-  const localeFilePath = path.join(__dirname, '..', 'locales', `${lang}.json`);
+  let localeFilePath: string;
+  if (process.env.NODE_ENV === 'production') {
+    localeFilePath = path.join(__dirname, 'locales', `${lang}.json`);
+  } else {
+    localeFilePath = path.resolve(process.cwd(), '..', '..', 'locales', `${lang}.json`);
+  }
 
   fs.readFile(localeFilePath, 'utf8', (err, data) => {
     if (err) {

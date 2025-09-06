@@ -4,6 +4,7 @@ import fs from 'fs';
 import { get, merge, set } from 'lodash';
 import os from 'os';
 import path from 'path';
+import { t } from '../utils/i18n';
 
 // Define the path for the global configuration file
 const GENDOC_DIR = path.join(os.homedir(), '.gendoc');
@@ -35,7 +36,7 @@ export function getGlobalConfig(): Partial<AppConfig> {
     const content = fs.readFileSync(CONFIG_FILE_PATH, 'utf-8');
     return JSON.parse(content);
   } catch (error) {
-    console.error('Error reading or parsing global config file:', error);
+    console.error(t('config_error_reading_global_config'), error);
     return {};
   }
 }
@@ -51,7 +52,7 @@ export function writeGlobalConfig(config: Partial<AppConfig>): void {
     }
     fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(config, null, 2));
   } catch (error) {
-    console.error('Error writing global config file:', error);
+    console.error(t('config_error_writing_global_config'), error);
   }
 }
 
