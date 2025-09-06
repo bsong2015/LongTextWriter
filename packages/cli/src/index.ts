@@ -9,6 +9,7 @@ import { outlineCommand } from './commands/outline';
 import { runCommand } from './commands/run';
 import { publishCommand } from './commands/publish';
 import { statusCommand } from './commands/status';
+import { createConfigCommand } from './commands/config';
 
 const program = new Command();
 
@@ -78,5 +79,7 @@ program
   .action(() => {
     require('./server');
   });
+
+program.addCommand(createConfigCommand());
 
 program.parse(process.argv);

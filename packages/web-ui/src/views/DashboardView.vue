@@ -3,7 +3,10 @@
     <!-- 优化的顶部操作栏 -->
     <el-header class="page-header">
       <h1 class="page-title">GenDoc</h1>
-      <el-button type="primary" @click="showNewProjectDialog = true">+ 新建项目</el-button>
+      <div>
+        <el-button type="primary" @click="showNewProjectDialog = true">+ 新建项目</el-button>
+        <el-button :icon="ElIconSetting" circle @click="navigateToSettings" />
+      </div>
     </el-header>
 
     <el-main class="project-main-content">
@@ -135,7 +138,7 @@ import { getProjects, createProject, deleteProject, uploadFile } from '../servic
 import type { Project, ProjectIdea } from '@gendoc/shared';
 import type { FormInstance, UploadUserFile } from 'element-plus';
 import { ElMessage } from 'element-plus';
-import { Delete as ElIconDelete } from '@element-plus/icons-vue';
+import { Delete as ElIconDelete, Setting as ElIconSetting } from '@element-plus/icons-vue';
 import * as ElIcons from '@element-plus/icons-vue';
 
 const showNewProjectDialog = ref(false);
@@ -181,6 +184,10 @@ async function fetchProjects() {
 
 function navigateToProject(projectName: string) {
   router.push({ name: 'ProjectDetail', params: { projectName } });
+}
+
+function navigateToSettings() {
+  router.push('/settings');
 }
 
 function nextStep() {

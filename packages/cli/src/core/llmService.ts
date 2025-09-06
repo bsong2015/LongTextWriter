@@ -21,10 +21,10 @@ import { t } from '../utils/i18n';
 import * as fs from 'fs';
 import * as path from 'path';
 import { setGlobalDispatcher, ProxyAgent } from 'undici'; // Added import
+import { getConfig } from './configManager';
 
 // --- LLM Client Initialization ---
 
-const isMockLLM = process.env.MOCK_LLM === 'true';
 let isClientInfoLogged = false;
 
 // Mock class for testing without hitting the API
@@ -59,7 +59,9 @@ class MockChatOpenAI {
 }
 
 function getChatClient() {
-  if (!process.env.OPENAI_API_KEY && !isMockLLM) {
+  const config = getConfig();
+  const isMockLLM = config.app.mock;
+  if (!config.llm.apiKey && !isMockLLM) {
     throw new Error(t('openai_api_key_not_set'));
   }
 
@@ -67,12 +69,12 @@ function getChatClient() {
     console.log('--- LLM Client Info ---');
     console.log(`Using Mock LLM: ${isMockLLM}`);
     if (!isMockLLM) {
-        console.log(`Model: ${process.env.OPENAI_MODEL || 'gpt-4o'}`);
-        const apiBaseUrl = process.env.OPENAI_API_BASE;
+        console.log(`Model: ${config.llm.model || 'gpt-4o'}`);
+        const apiBaseUrl = config.llm.baseUrl;
         if (apiBaseUrl) {
             console.log(`Using API Base: ${apiBaseUrl}`);
         }
-        const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy;
+        const proxyUrl = config.llm.proxy;
         if (proxyUrl) {
             console.log(`Using Proxy: Yes, Address: ${proxyUrl}`);
             // Set global dispatcher for undici
@@ -88,12 +90,12 @@ function getChatClient() {
   return isMockLLM
     ? new MockChatOpenAI()
     : new ChatOpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-        model: process.env.OPENAI_MODEL || 'gpt-4o',
+        apiKey: config.llm.apiKey === null ? undefined : config.llm.apiKey,
+        model: config.llm.model || 'gpt-4o',
         temperature: 0.7,
 		verbose: false,
         configuration: {
-          baseURL: process.env.OPENAI_API_BASE,
+           baseURL: config.llm.baseUrl === null ? undefined : config.llm.baseUrl,
         },
       });
 }

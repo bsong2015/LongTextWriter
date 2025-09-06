@@ -32,6 +32,10 @@ export const downloadFile = (filePath: string): void => {
 // Internationalization (i18n)
 export const getLocale = (lang: string): Promise<Record<string, string>> => apiClient.get(`/locales/${lang}`).then(res => res.data);
 
+// Config Management
+export const getConfig = (): Promise<Partial<AppConfig>> => apiClient.get('/config').then(res => res.data);
+export const updateConfig = (config: Partial<AppConfig>): Promise<{ message: string }> => apiClient.put('/config', config).then(res => res.data);
+
 // File Upload
 export const uploadFile = (file: File): Promise<{ filePath: string; fileName: string }> => {
   const formData = new FormData();

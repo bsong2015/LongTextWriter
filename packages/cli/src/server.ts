@@ -9,7 +9,8 @@ import multer from 'multer';
 import { Buffer } from 'node:buffer';
 
 import { getProjectList, createProject, deleteProject, getProjectDetails, getGeneratedProjectContent, saveGeneratedProjectContent,generateProjectOutline, startContentGeneration, saveProjectOutline, publishProject } from './core/projectManager';
-import { ProjectSchema } from '@gendoc/shared'; // Import ProjectSchema from types.ts
+import { getConfig, writeGlobalConfig, reloadConfig } from './core/configManager';
+import { AppConfig, ProjectSchema } from '@gendoc/shared'; // Import ProjectSchema from types.ts
 import { z } from 'zod';
 
 export const app = express();
@@ -112,6 +113,28 @@ app.get('/api/locales/:lang', (req, res) => {
       res.status(500).json({ message: 'Error parsing locale file' });
     }
   });
+});
+
+app.get('/api/config', (req, res) => {
+  try {
+    const config = getConfig();
+    res.json(config);
+  } catch (error) {
+    console.error('Error fetching config:', error);
+    res.status(500).json({ message: 'Error fetching config' });
+  }
+});
+
+app.put('/api/config', (req, res) => {
+  try {
+    const config: Partial<AppConfig> = req.body;
+    writeGlobalConfig(config);
+    reloadConfig(); // Reload the configuration in the running process
+    res.status(200).json({ message: 'Configuration saved successfully.' });
+  } catch (error: any) {
+    console.error('Error saving config:', error);
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // API endpoint for single project details

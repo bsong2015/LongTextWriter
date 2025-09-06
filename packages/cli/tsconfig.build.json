@@ -44,7 +44,9 @@
         "./src/core/projectManager.test.ts",
         "./src/core/projectManager.ts",
         "./src/core/prompts.ts",
-        "./src/utils/i18n.ts"
+        "./src/utils/i18n.ts",
+        "./src/commands/config.ts",
+        "./src/core/configManager.ts"
     ],
     "include": [
         "src/**/*.ts"

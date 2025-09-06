@@ -112,3 +112,24 @@ export const GeneratedContentSchema = z.object({
 });
 
 export type GeneratedContent = z.infer<typeof GeneratedContentSchema>;
+
+/**
+ * Defines the structure for the application's configuration.
+ * This configuration is loaded from multiple sources with a defined priority:
+ * 1. Command-line arguments
+ * 2. Environment variables
+ * 3. .env file (for development)
+ * 4. Global user config file (~/.gendoc/config.json)
+ */
+export interface AppConfig {
+  llm: {
+    apiKey?: string | null;
+    model?: string | null;
+    baseUrl?: string | null;
+    proxy?: string | null;
+  };
+  app: {
+    language?: 'en' | 'zh' | null;
+    mock?: boolean | null;
+  };
+}

@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { getConfig } from '../core/configManager';
 
+const config = getConfig();
 const DEFAULT_LANG = 'en';
 const localesDir = path.join(__dirname, '..', '..', 'locales');
 
@@ -24,7 +26,7 @@ function loadTranslations(lang: string) {
 }
 
 // Determine the language from environment variable, default to English
-const currentLang = process.env.GENDOC_LANG || DEFAULT_LANG;
+const currentLang = config.app.language || DEFAULT_LANG;
 loadTranslations(currentLang);
 
 export function t(key: string, replacements?: Record<string, string>): string {
