@@ -31,16 +31,20 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # 第四步：根据标签更新 package.json 版本
-      - name: Update package version from tag
+      # 第四步：根据标签更新版本号
+      - name: Extract version from tag
         run: |
           # 从 Git 引用 (例如 refs/tags/v1.2.0) 中提取版本号 (1.2.0)
           # 并将其设置为后续步骤可以使用的环境变量
           echo "VERSION=$(echo ${GITHUB_REF#refs/tags/v})" >> $GITHUB_ENV
-      - run: |
-          # 使用 npm version 命令更新所有 workspace 的版本号
-          # --no-git-tag-version 确保不创建新的 tag
-          npm version ${{ env.VERSION }} --no-git-tag-version --workspaces
+
+      # 4.1 使用 npm pkg set 直接更新所有 workspace 的 package.json 文件
+      - name: Update package.json versions
+        run: npm pkg set version=${{ env.VERSION }} --workspaces
+
+      # 4.2 更新 package-lock.json 文件以同步变更，避免网络请求
+      - name: Update package-lock.json
+        run: npm install --package-lock-only
 
       # 第五步：构建和打包项目
       - name: Build and create package
