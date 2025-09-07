@@ -44,7 +44,7 @@ jobs:
       - name: Build and create package
         run: |
           npm run build
-          npm pack --workspaces
+          npm pack --workspace=@gendoc/cli
 
       # 第六步：提交版本更新
       # Lerna 已经修改了 package.json 和 package-lock.json，我们只需提交它们

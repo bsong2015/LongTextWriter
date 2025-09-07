@@ -23,6 +23,9 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "bundleDependencies": [
+    "@gendoc/shared"
+  ],
   "dependencies": {
     "@inquirer/prompts": "^7.8.2",
     "@langchain/openai": "^0.6.7",
