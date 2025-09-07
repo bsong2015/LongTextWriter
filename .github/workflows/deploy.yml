@@ -30,7 +30,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18 # 您可以根据需要更改 Node.js 版本
+          node-version: 22 # 您可以根据需要更改 Node.js 版本
           cache: 'npm'
       - name: Install dependencies
         # 对于 monorepo，'npm install' 会自动安装所有工作区的依赖
