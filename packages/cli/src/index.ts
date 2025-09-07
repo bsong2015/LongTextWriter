@@ -11,10 +11,12 @@ import { publishCommand } from './commands/publish';
 import { statusCommand } from './commands/status';
 import { createConfigCommand } from './commands/config';
 
+const { version } = require('../package.json');
+
 const program = new Command();
 
 program
-  .version('0.0.1')
+  .version(version)
   .description('AI Long Document Generator');
 
 program

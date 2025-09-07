@@ -6,7 +6,7 @@ GenDoc is a powerful and flexible command-line tool and local web application th
 
 ### Prerequisites
 
-*   Node.js (v18 or higher recommended)
+*   Node.js (v22 or higher recommended)
 *   An OpenAI API Key
 
 ### Installation

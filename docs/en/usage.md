@@ -1,60 +1,133 @@
-# Usage
+# Usage Guide
 
-You can interact with GenDoc through its web interface or the command-line tool.
+This guide explains how to use the GenDoc command-line interface (CLI). For installation and configuration instructions, please see the **Installation & Configuration** guide.
 
-## Web UI
+## Starting the Web UI
 
-The primary way to use GenDoc is through the web interface. To start the application for production use, run:
-
-```bash
-npm run start:web
-```
-
-This starts the backend server and serves the production-built frontend. Open your browser and navigate to `http://localhost:3000`.
-
-## Command-Line Interface (CLI)
-
-You can also use the CLI directly for all operations.
-
-After building the project with `npm run build`, you can run CLI commands using the compiled output:
+To launch the integrated web user interface, simply run the `web` command. This will start a local server, and you can access the application in your web browser.
 
 ```bash
-node packages/cli/dist/index.js <command> [args]
+gendoc web
 ```
 
-For development, you can run commands without building first using `ts-node`:
+The accessible URL (usually `http://localhost:3000`) will be displayed in your terminal.
+
+## CLI Command Reference
+
+Below is a detailed reference for all available CLI commands.
+
+### `gendoc new`
+
+Creates a new document generation project.
+
+**Interactive Mode**
+Running `gendoc new` without arguments starts an interactive session that will guide you through the project setup process.
+
 ```bash
-npm run dev --workspace=@gendoc/cli -- <command> [args]
+gendoc new
 ```
-Example:
+
+**Parameter Mode**
+You can also provide all project details via command-line options for automation.
+
 ```bash
-npm run dev --workspace=@gendoc/cli -- ls
+# Example: Create a new book project named "My Sci-Fi Novel"
+gendoc new book --name "My Sci-Fi Novel" --lang "en" --summary "A story about a lone explorer on a distant planet."
 ```
 
-### Core Commands
+**Options**
+-   `[type]`: The type of project. Can be `book`, `series`, or `templated`.
+-   `-n, --name <name>`: The name of the project.
+-   `-l, --lang <language>`: The language of the project idea (e.g., `en`, `zh`).
+-   `-s, --summary <summary>`: A brief summary of the project idea.
+-   `-p, --prompt <prompt>`: A global prompt or instruction to guide the entire generation process.
+-   `--sources <sources...>`: For `templated` projects, one or more source files.
+-   `--template <template>`: For `templated` projects, the path to the template file.
 
--   `gendoc new`: Starts an interactive session to create a new project.
--   `gendoc ls`: Lists all projects in your `gendoc-workspace`.
--   `gendoc status <project_name>`: Displays a detailed progress report for a project.
--   `gendoc outline <project_name>`: Generates a detailed outline using AI.
--   `gendoc run <project_name>`: Starts the AI content generation process.
--   `gendoc publish <project_name>`: Compiles generated content into final Markdown documents.
--   `gendoc rm <project_name>`: Deletes a project.
+---
 
-## Workspace Directory
+### `gendoc ls`
 
-All your projects are stored in the `gendoc-workspace` directory, which is created automatically in your project root.
+Lists all projects currently in your workspace.
 
+```bash
+gendoc ls
 ```
-gendoc-workspace/
-└── projects/
-    ├── my-first-book/
-    │   ├── project.json
-    │   ├── generated.json
-    │   └── output/
-    └── my-design-spec/
-        ├── project.json
-        ├── sources/
-        ├── templates/
-        └── output/
+
+---
+
+### `gendoc status <project_name>`
+
+Displays the generation status, progress, and details for a specific project.
+
+```bash
+gendoc status "My Sci-Fi Novel"
 ```
+
+---
+
+### `gendoc outline <project_name>`
+
+Automatically generates a detailed outline for a `book` or `series` project using the AI.
+
+```bash
+gendoc outline "My Sci-Fi Novel"
+```
+
+---
+
+### `gendoc run <project_name>`
+
+Starts or resumes the content generation process for the specified project.
+
+```bash
+gendoc run "My Sci-Fi Novel"
+```
+
+---
+
+### `gendoc publish <project_name>`
+
+Publishes all the generated content for a project into final, consolidated Markdown files.
+
+```bash
+gendoc publish "My Sci-Fi Novel"
+```
+
+---
+
+### `gendoc rm <project_name>`
+
+Deletes a project and all of its associated files from the workspace.
+
+**Default (with confirmation)**
+```bash
+gendoc rm "My Sci-Fi Novel"
+```
+
+**Force Deletion (skips confirmation)**
+```bash
+gendoc rm "My Sci-Fi Novel" --yes
+```
+
+---
+
+### `gendoc config`
+
+Manages your global configuration, such as API keys and language preferences.
+
+**Set a value**
+```bash
+gendoc config set llm.apiKey sk-xxxxxxxx
+```
+
+**Get a value**
+```bash
+gendoc config get llm.model
+```
+
+**List all currently set values**
+```bash
+gendoc config list
+```
+For a full list of configurable keys, please refer to the **Installation & Configuration** guide.
