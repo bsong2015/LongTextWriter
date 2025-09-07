@@ -27,25 +27,19 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      # 第三步：安装项目依赖
+      # 第三步：安装项目依赖 (Lerna 也会被安装)
       - name: Install dependencies
         run: npm install
 
-      # 第四步：根据标签更新版本号
-      - name: Extract version from tag
+      # 第四步：【新方案】使用 Lerna 更新所有包的版本
+      - name: Update package versions with Lerna
         run: |
-          # 从 Git 引用 (例如 refs/tags/v1.2.0) 中提取版本号 (1.2.0)
-          # 并将其设置为后续步骤可以使用的环境变量
-          echo "VERSION=$(echo ${GITHUB_REF#refs/tags/v})" >> $GITHUB_ENV
-
-      # 4.1 使用 npm pkg set 直接更新所有 workspace 的 package.json 文件
-      - name: Update package.json versions
-        run: npm pkg set version=${{ env.VERSION }} --workspaces
-
-      # 4.2 更新 package-lock.json 文件以同步变更，避免网络请求
-      - name: Update package-lock.json
-        run: npm install --package-lock-only
-
+          # 提取版本号
+          VERSION=$(echo ${GITHUB_REF#refs/tags/v})
+          # 使用 lerna version 命令，它会智能地更新所有 package.json 和 package-lock.json
+          # 并且不会因为本地包而报错
+          npx lerna version $VERSION --yes --no-git-tag-version --no-push
+      
       # 第五步：构建和打包项目
       - name: Build and create package
         run: |
@@ -53,7 +47,7 @@ jobs:
           npm pack --workspaces
 
       # 第六步：提交版本更新
-      # 将 package.json 和 package-lock.json 的版本更新提交回仓库
+      # Lerna 已经修改了 package.json 和 package-lock.json，我们只需提交它们
       - name: Commit version update
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
@@ -64,7 +58,5 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          # 自动根据从上一个标签到当前标签的提交记录生成发布说明
           generate_release_notes: true
-          # 找到由 'npm pack' 命令生成的 .tgz 文件并将其作为附件上传
           files: "*.tgz"
