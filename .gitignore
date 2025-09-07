@@ -23,3 +23,6 @@ Thumbs.db
 
 # 忽略打包文件
 *.tgz
+
+# VitePress cache directory
+docs/.vitepress/cache/
