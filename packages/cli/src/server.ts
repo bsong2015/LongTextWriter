@@ -9,8 +9,7 @@ import { Buffer } from 'node:buffer';
 
 import { getProjectList, createProject, deleteProject, getProjectDetails, getGeneratedProjectContent, saveGeneratedProjectContent,generateProjectOutline, startContentGeneration, saveProjectOutline, publishProject } from './core/projectManager';
 import { getConfig, writeGlobalConfig, reloadConfig } from './core/configManager';
-import { AppConfig, ProjectSchema } from '@gendoc/shared'; // Import ProjectSchema from types.ts
-import { getWorkspacePath } from '@gendoc/shared/workspace';
+import { AppConfig, ProjectSchema, getWorkspacePath } from '@gendoc/shared'; // Import ProjectSchema from types.ts
 import { z } from 'zod';
 
 export const app = express();

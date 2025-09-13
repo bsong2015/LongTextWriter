@@ -42,9 +42,11 @@ export default defineConfig({
       { icon: 'github', link: 'https://github.com/bsong2015/LongTextWriter' }
     ],
 
+    lastUpdated: true,
+
     footer: {
       message: 'Released under the MIT License.',
-      copyright: 'Copyright © 2024-present'
+      copyright: 'Copyright © 2025-present'
     }
   },
 
@@ -65,6 +67,7 @@ export default defineConfig({
         ],
         // sidebar is already defined above and will be used
         outlineTitle: '在本页',
+        lastUpdatedText: '最后更新时间',
         docFooter: {
           prev: '上一页',
           next: '下一页'

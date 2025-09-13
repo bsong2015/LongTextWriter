@@ -1,8 +1,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { Project, GeneratedContentSchema, ProjectSchema, BookOutline, GeneratedContent, BookProjectSchema, SeriesProjectSchema, TemplatedProjectSchema, BookProject, SeriesProject, TemplatedProject, ProjectDetail, PublishResult, ProjectStatus } from '@gendoc/shared';
-import { getProjectsPath, getWorkspacePath } from '@gendoc/shared/workspace';
+import { Project, GeneratedContentSchema, ProjectSchema, BookOutline, GeneratedContent, BookProjectSchema, SeriesProjectSchema, TemplatedProjectSchema, BookProject, SeriesProject, TemplatedProject, ProjectDetail, PublishResult, ProjectStatus, getProjectsPath, getWorkspacePath } from '@gendoc/shared';
 import { t } from '../utils/i18n';
 import { generateOutline as llmGenerateOutline, generateArticleContent, summarizeText } from './llmService';
 import { BookOutlineSchema } from '@gendoc/shared'; // Explicitly import BookOutlineSchema
@@ -349,7 +348,7 @@ export async function saveProjectOutline(projectName: string, outline: BookOutli
 
 import archiver from 'archiver';
 
-// ... (rest of the file)
+// ... (rest of the file) 
 
 export async function publishProject(projectName: string, publishType: string): Promise<PublishResult> {
   const project = getProjectDetails(projectName);

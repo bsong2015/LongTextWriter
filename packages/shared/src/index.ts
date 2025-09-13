@@ -133,3 +133,5 @@ export interface AppConfig {
     mock?: boolean | null;
   };
 }
+
+export * from './workspace';
