@@ -4,29 +4,20 @@ import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 import express from 'express';
 import * as fs from 'fs';
-import * as os from 'os';
 import multer from 'multer';
 import { Buffer } from 'node:buffer';
 
 import { getProjectList, createProject, deleteProject, getProjectDetails, getGeneratedProjectContent, saveGeneratedProjectContent,generateProjectOutline, startContentGeneration, saveProjectOutline, publishProject } from './core/projectManager';
 import { getConfig, writeGlobalConfig, reloadConfig } from './core/configManager';
 import { AppConfig, ProjectSchema } from '@gendoc/shared'; // Import ProjectSchema from types.ts
+import { getWorkspacePath } from '@gendoc/shared/workspace';
 import { z } from 'zod';
 
 export const app = express();
 const port = 3000;
 
-
-let GENDOC_WORKSPACE: string;
-if (process.env.NODE_ENV === 'production') {
-  GENDOC_WORKSPACE = path.resolve(os.homedir(), '.gendoc-workspace');
-} else {
-  GENDOC_WORKSPACE = path.resolve(__dirname, '..', '..', '..', 'gendoc-workspace');
-}
-
-
 // Multer setup for file uploads
-const uploadDir = path.resolve(GENDOC_WORKSPACE, 'uploads');
+const uploadDir = path.resolve(getWorkspacePath(), 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -53,7 +44,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     return res.status(400).json({ message: 'No file uploaded.' });
   }
   // Return the path relative to the workspace directory
-  const relativeToWorkspacePath = path.relative(GENDOC_WORKSPACE, req.file.path);
+  const relativeToWorkspacePath = path.relative(getWorkspacePath(), req.file.path);
   res.status(200).json({ filePath: relativeToWorkspacePath, fileName: req.file.filename });
 });
 
@@ -98,12 +89,8 @@ app.delete('/api/projects/:name', (req, res) => {
 
 app.get('/api/locales/:lang', (req, res) => {
   const lang = req.params.lang;
-  let localeFilePath: string;
-  if (process.env.NODE_ENV === 'production') {
-    localeFilePath = path.join(__dirname, 'locales', `${lang}.json`);
-  } else {
-    localeFilePath = path.resolve(process.cwd(), '..', '..', 'locales', `${lang}.json`);
-  }
+  // Locales are copied to the dist/locales directory during build, so the path should be relative to __dirname
+  const localeFilePath = path.resolve(__dirname, 'locales', `${lang}.json`);
 
   fs.readFile(localeFilePath, 'utf8', (err, data) => {
     if (err) {
@@ -244,12 +231,12 @@ app.get('/api/download', (req, res) => {
         return res.status(400).json({ message: 'File path is required.' });
     }
 
-    // Resolve the relative path against GENDOC_WORKSPACE
-    const absoluteFilePath = path.resolve(GENDOC_WORKSPACE, filePath);
+    const workspacePath = getWorkspacePath();
+    // Resolve the relative path against the workspace path
+    const absoluteFilePath = path.resolve(workspacePath, filePath);
 
-    // Security check: Ensure the path is within the allowed directory (GENDOC_WORKSPACE)
-    // This check is now more robust as filePath is expected to be relative to GENDOC_WORKSPACE
-    if (!absoluteFilePath.startsWith(GENDOC_WORKSPACE)) {
+    // Security check: Ensure the path is within the allowed directory
+    if (!absoluteFilePath.startsWith(workspacePath)) {
         return res.status(403).json({ message: 'Access to the specified file path is forbidden.' });
     }
 
@@ -260,7 +247,10 @@ app.get('/api/download', (req, res) => {
     res.download(absoluteFilePath, (err) => {
         if (err) {
             console.error('Error downloading file:', err);
-            res.status(500).json({ message: 'Error downloading file.' });
+            // Avoid sending a second response if one has already been sent
+            if (!res.headersSent) {
+              res.status(500).json({ message: 'Error downloading file.' });
+            }
         }
     });
 });

@@ -68,6 +68,9 @@ async function build() {
     format: 'cjs',
     outfile: OUTFILE,
     external: external,
+    define: {
+      'process.env.NODE_ENV': JSON.stringify('production'),
+    },
     banner: {
       js: '#!/usr/bin/env node',
     },

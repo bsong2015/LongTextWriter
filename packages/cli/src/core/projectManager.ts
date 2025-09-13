@@ -2,22 +2,12 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { Project, GeneratedContentSchema, ProjectSchema, BookOutline, GeneratedContent, BookProjectSchema, SeriesProjectSchema, TemplatedProjectSchema, BookProject, SeriesProject, TemplatedProject, ProjectDetail, PublishResult, ProjectStatus } from '@gendoc/shared';
+import { getProjectsPath, getWorkspacePath } from '@gendoc/shared/workspace';
 import { t } from '../utils/i18n';
 import { generateOutline as llmGenerateOutline, generateArticleContent, summarizeText } from './llmService';
 import { BookOutlineSchema } from '@gendoc/shared'; // Explicitly import BookOutlineSchema
 
-
-let GENDOC_WORKSPACE: string;
-
-if (process.env.NODE_ENV === 'production') {
-  // For installed package, use user's home directory
-  GENDOC_WORKSPACE = path.resolve(os.homedir(), '.gendoc-workspace');
-} else {
-  // For local development, use the project root
-  GENDOC_WORKSPACE = path.resolve(__dirname, '..', '..', '..', '..', 'gendoc-workspace');
-}
-
-const PROJECTS_DIR = path.resolve(GENDOC_WORKSPACE, 'projects');
+const PROJECTS_DIR = getProjectsPath();
 
 type ChapterOutline = BookOutline['chapters'][0];
 type ArticleOutline = ChapterOutline['articles'][0];
@@ -422,7 +412,7 @@ export async function publishProject(projectName: string, publishType: string): 
 
       publishedFilePath = path.resolve(outputDir, `${projectName}.md`);
       fs.writeFileSync(publishedFilePath, contentToPublish, 'utf-8');
-      relativePublishedFilePath = path.relative(GENDOC_WORKSPACE, publishedFilePath);
+      relativePublishedFilePath = path.relative(getWorkspacePath(), publishedFilePath);
       return { message: t('project_published_success', { outputPath: publishedFilePath }), filePath: relativePublishedFilePath };
 
     case 'series':
@@ -440,7 +430,7 @@ export async function publishProject(projectName: string, publishType: string): 
         }).join('\n\n');
         publishedFilePath = path.resolve(outputDir, `${projectName}.md`);
         fs.writeFileSync(publishedFilePath, contentToPublish, 'utf-8');
-        relativePublishedFilePath = path.relative(GENDOC_WORKSPACE, publishedFilePath);
+        relativePublishedFilePath = path.relative(getWorkspacePath(), publishedFilePath);
         return { message: t('project_published_success', { outputPath: publishedFilePath }), filePath: relativePublishedFilePath };
 
       } else if (publishType === 'multiple-markdown-zip') {
@@ -468,7 +458,7 @@ export async function publishProject(projectName: string, publishType: string): 
         const zipFilePath = path.resolve(outputDir, `${projectName}.zip`);
         await zipDirectory(tempDir, zipFilePath);
         fs.rmSync(tempDir, { recursive: true, force: true });
-        relativeZipFilePath = path.relative(GENDOC_WORKSPACE, zipFilePath);
+        relativeZipFilePath = path.relative(getWorkspacePath(), zipFilePath);
         return { message: t('project_published_success_zip', { outputPath: zipFilePath }), filePath: relativeZipFilePath };
 
       } else {
@@ -481,6 +471,7 @@ export async function publishProject(projectName: string, publishType: string): 
 }
 
 export function createProject(projectData: any) {
+  const PROJECTS_DIR = getProjectsPath();
   if (!fs.existsSync(PROJECTS_DIR)) {
     fs.mkdirSync(PROJECTS_DIR, { recursive: true });
   }
