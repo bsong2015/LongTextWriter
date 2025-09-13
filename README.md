@@ -1,3 +1,5 @@
+English | [简体中文](./README.zh-CN.md)
+
 # GenDoc - AI Long Document Generator
 
 GenDoc is a powerful and flexible command-line tool and local web application that leverages Large Language Models (LLMs) to automate the creation of long-form, structured documents. Whether you're writing a book, generating technical documentation from a template, or creating a series of articles, GenDoc streamlines the process from idea to final publication.
@@ -74,6 +76,3 @@ For more detailed information on installation, configuration, advanced usage, de
 *   [**Usage Guide (Web UI & CLI)**](docs/en/usage.md)
 *   [**Testing**](docs/en/testing.md)
 *   [**Project Structure & Workspace**](docs/en/index.md)
-
-
-

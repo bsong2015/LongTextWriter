@@ -9,12 +9,14 @@ function loadTranslations() {
   const config = getConfig();
   let localesDir: string;
 
-  // In production, locales are copied to dist/locales.
-  // In development, they are at the project root.
-  if (process.env.NODE_ENV === 'production') {
-    localesDir = path.join(__dirname, '..', 'locales');
-  } else {
-    localesDir = path.resolve(process.cwd(), '..', '..', 'locales');
+  // First, try the production path. In production, __dirname is the 'dist' folder.
+  localesDir = path.join(__dirname, 'locales');
+
+  // If that path doesn't exist, we are in a development environment.
+  if (!fs.existsSync(localesDir)) {
+    // In development, __dirname is 'src/utils', so the above path fails.
+    // We fall back to the path relative to CWD, which works for `npm run dev`.
+    localesDir = path.resolve(process.cwd(), '../../locales');
   }
 
   const currentLang = config.app.language || DEFAULT_LANG;
