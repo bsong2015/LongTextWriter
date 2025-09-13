@@ -7,13 +7,20 @@ export default defineConfig({
   // Base path for GitHub Pages deployment
   base: '/LongTextWriter/',
 
-  locales: {
-    root: {
-      label: 'English',
-      lang: 'en',
-      themeConfig: {
+  themeConfig: {
+    // Shared theme configurations
+    socialLinks: [
+      { icon: 'github', link: 'https://github.com/bsong2015/LongTextWriter' }
+    ],
+
+    // Locale-specific configurations
+    locales: {
+      en: {
+        label: 'English',
+        lang: 'en',
+        link: '/en/', // Required for the language switcher to work correctly
         nav: [
-          { text: 'Home', link: '/' },
+          { text: 'Home', link: '/en/' }, // Link to the English documentation home
           { text: 'Guide', link: '/en/installation-and-configuration' }
         ],
         sidebar: {
@@ -30,20 +37,15 @@ export default defineConfig({
             }
           ]
         },
-        socialLinks: [
-          { icon: 'github', link: 'https://github.com/bsong2015/LongTextWriter' }
-        ],
         footer: {
           message: 'Released under the MIT License.',
           copyright: 'Copyright © 2024-present'
         }
-      }
-    },
-    zh: {
-      label: '简体中文',
-      lang: 'zh-CN',
-      link: '/zh/',
-      themeConfig: {
+      },
+      zh: {
+        label: '简体中文',
+        lang: 'zh-CN',
+        link: '/zh/',
         nav: [
           { text: '首页', link: '/zh/' },
           { text: '指南', link: '/zh/installation-and-configuration' }
@@ -62,9 +64,6 @@ export default defineConfig({
             }
           ]
         },
-        socialLinks: [
-          { icon: 'github', link: 'https://github.com/bsong2015/LongTextWriter' }
-        ],
         footer: {
           message: '在 MIT 许可下发布。',
           copyright: 'Copyright © 2024-present'
