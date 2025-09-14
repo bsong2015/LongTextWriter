@@ -156,7 +156,7 @@ const isResumable = computed(() => {
 
   // Condition 2: Heuristic for a paused state after restart
   // If backend says idle, but we have some content and it's not 100% complete
-  const heuristicPaused = project.value.status.type === 'idle' && hasContent.value && generationPercentage.value < 100;
+  const heuristicPaused = project.value.generationStatus === 'idle' && hasContent.value && generationPercentage.value < 100;
 
   return backendInProgress || heuristicPaused;
 });
@@ -268,7 +268,7 @@ onMounted(async () => {
   await fetchProjectDetails();
   // If generation was explicitly running on component mount, start polling
   // The backend's generationStatus is the source of truth for active generation
-  if (project.value?.generationStatus === 'running' && project.value.status.percentage < 100) {
+  if (project.value?.generationStatus === 'running' && project.value.status.type === 'progress' && project.value.status.percentage < 100) {
     isGenerating.value = true;
     startPolling();
   }
