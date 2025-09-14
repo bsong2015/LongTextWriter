@@ -17,13 +17,14 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
+    "@gendoc/shared": "^1.0.0",
     "@vueup/vue-quill": "^1.2.0",
     "axios": "^1.11.0",
     "element-plus": "^2.10.7",
+    "marked": "^16.2.1",
     "pinia": "^3.0.3",
     "vue": "^3.5.18",
-    "vue-router": "^4.5.1",
-    "@gendoc/shared": "^1.0.0"
+    "vue-router": "^4.5.1"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.2",

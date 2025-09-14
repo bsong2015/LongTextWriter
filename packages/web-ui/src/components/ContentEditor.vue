@@ -27,21 +27,37 @@
     <!-- Right Main Content: Editor and Actions -->
     <el-main class="editor-main">
       <div class="editor-actions">
-        <el-button type="success" @click="saveCurrentArticle">保存当前文章</el-button>
+        <template v-if="isEditMode">
+          <el-button type="success" @click="saveCurrentArticle">保存</el-button>
+          <el-button @click="cancelEdit">取消</el-button>
+        </template>
+        <template v-else>
+          <el-button
+            type="primary"
+            @click="enterEditMode"
+            :disabled="!selectedArticle"
+          >
+            编辑
+          </el-button>
+        </template>
       </div>
 
       <div class="article-editor-area">
         <template v-if="selectedArticle">
           <h2>{{ selectedArticle.title }}</h2>
-          <p class="article-summary">{{ selectedArticle.summary }}</p>
         </template>
         <template v-else>
           <h2>请选择文章</h2>
-          <p class="article-summary">请从左侧大纲中选择一篇文章进行编辑。</p>
+          <p>请从左侧大纲中选择一篇文章进行编辑。</p>
         </template>
 
-        <!-- Rich Text Editor is now always present -->
-        <div class="rich-text-editor-wrapper">
+        <!-- Read Mode View -->
+        <div v-if="!isEditMode && selectedArticle" class="markdown-read-view">
+          <div v-html="renderedContent"></div>
+        </div>
+
+        <!-- Rich Text Editor, only shown in edit mode -->
+        <div v-show="isEditMode && selectedArticle" class="rich-text-editor-wrapper">
           <QuillEditor
             ref="quillEditor"
             theme="snow"
@@ -57,14 +73,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { saveGeneratedProjectContent } from '../services/api.ts';
+import { saveGeneratedProjectContent } from '../services/api';
 import type { BookProject, SeriesProject, GeneratedContent, BookOutline } from '@gendoc/shared';
 import {
   Folder,
   Document,
 } from '@element-plus/icons-vue';
+import { marked } from 'marked';
 
 // Quill imports
 import { QuillEditor } from '@vueup/vue-quill';
@@ -81,9 +98,18 @@ const emit = defineEmits(['update:generatedContent', 'save']);
 
 const treeData = ref<any[]>([]);
 const selectedArticle = ref<any | null>(null); // Currently selected article for editing
+const isEditMode = ref(false);
+const originalContent = ref(''); // To store content before editing
 
 // Quill editor ref
 const quillEditor = ref<any>(null);
+
+const renderedContent = computed(() => {
+  if (selectedArticle.value && selectedArticle.value.content) {
+    return marked(selectedArticle.value.content);
+  }
+  return '';
+});
 
 // Watch selectedArticle to update editor content
 watch(selectedArticle, (newArticle) => {
@@ -99,8 +125,8 @@ watch(selectedArticle, (newArticle) => {
 }, { immediate: true });
 
 // Handle content change from Quill
-const onEditorChange = () => {
-  if (selectedArticle.value && quillEditor.value) {
+const onEditorChange = (_delta: any, _oldContents: any, source: string) => {
+  if (source === 'user' && selectedArticle.value && quillEditor.value) {
     selectedArticle.value.content = quillEditor.value.getHTML();
   }
 };
@@ -118,7 +144,6 @@ const convertContentToTreeData = (content: GeneratedContent) => {
       type: 'article',
       status: article.status,
       content: article.content,
-      summary: article.summary,
       chapterIndex, // Add chapterIndex
       articleIndex, // Add articleIndex
     })),
@@ -138,7 +163,6 @@ const convertOutlineToTreeDataForContent = (outline: BookOutline) => {
       type: 'article',
       status: 'pending',
       content: '',
-      summary: '',
       chapterIndex,
       articleIndex,
     })),
@@ -163,6 +187,7 @@ const handleNodeClick = (data: any) => {
   if (data.type === 'article') {
     // Use a deep copy to prevent direct mutation before saving
     selectedArticle.value = JSON.parse(JSON.stringify(data));
+    isEditMode.value = false; // Always start in read mode
   }
 };
 
@@ -185,6 +210,27 @@ const getStatusLabel = (status: string) => {
     default: return '未知';
   }
 };
+
+// --- Editor Mode ---
+const enterEditMode = () => {
+  if (!selectedArticle.value) {
+    ElMessage.warning('请先从左侧选择一篇文章。');
+    return;
+  }
+  originalContent.value = selectedArticle.value.content || '';
+  isEditMode.value = true;
+};
+
+const cancelEdit = () => {
+  if (selectedArticle.value) {
+    selectedArticle.value.content = originalContent.value;
+    if (quillEditor.value) {
+      quillEditor.value.setHTML(originalContent.value);
+    }
+  }
+  isEditMode.value = false;
+};
+
 
 // --- API Calls ---
 
@@ -218,6 +264,7 @@ const saveCurrentArticle = async () => {
     }
     
     emit('save'); // Notify parent that content has been saved
+    isEditMode.value = false; // Switch back to read mode
   } catch (error: any) {
     console.error('文章保存失败:', error);
     ElMessage.error(`文章保存失败: ${error.message || '未知错误'}`);
@@ -257,6 +304,8 @@ const saveCurrentArticle = async () => {
   padding: 20px;
   display: flex;
   flex-direction: column;
+  width: 900px; /* Fixed width for the main content area */
+  flex-shrink: 0; /* Prevent shrinking below its content size */
 }
 
 .editor-actions {
@@ -271,6 +320,8 @@ const saveCurrentArticle = async () => {
   border-radius: 4px;
   padding: 15px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .article-editor-area h2 {
@@ -280,18 +331,10 @@ const saveCurrentArticle = async () => {
   color: #303133;
 }
 
-.article-summary {
-  font-size: 14px;
-  color: #606266;
-  margin-bottom: 15px;
-  padding-bottom: 15px;
-  border-bottom: 1px dashed var(--el-border-color-lighter);
-}
-
 .rich-text-editor-wrapper {
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 4px;
-  padding: 10px;
+  /* border: 1px solid var(--el-border-color-light); */
+  /* border-radius: 4px; */
+  /* padding: 10px; */
   min-height: 200px;
   flex-grow: 1;
   display: flex;
@@ -312,66 +355,64 @@ const saveCurrentArticle = async () => {
   color: var(--el-color-primary);
 }
 
-/* Basic TipTap editor styles */
-.ProseMirror {
-  min-height: 180px; /* Adjust as needed */
-  outline: none;
-  padding: 5px;
+.markdown-read-view {
   flex-grow: 1;
-  color: black; /* Set text color to black for visibility test */
+  overflow-y: auto;
+  padding: 15px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 4px;
+  color: var(--el-text-color-primary); /* Ensure text color is visible in dark mode */
 }
 
-.ProseMirror p:first-child {
-  margin-top: 0;
-}
-.ProseMirror p:last-child {
-  margin-bottom: 0;
-}
-
-/* Styles for TipTap generated content */
-.ProseMirror p {
+.markdown-read-view p {
   margin: 0 0 1em 0;
 }
 
-.ProseMirror h1,
-.ProseMirror h2,
-.ProseMirror h3,
-.ProseMirror h4,
-.ProseMirror h5,
-.ProseMirror h6 {
+.markdown-read-view h1,
+.markdown-read-view h2,
+.markdown-read-view h3,
+.markdown-read-view h4,
+.markdown-read-view h5,
+.markdown-read-view h6 {
   margin-top: 1.2em;
   margin-bottom: 0.8em;
   font-weight: bold;
   line-height: 1.2;
+  color: var(--el-text-color-primary);
 }
 
-.ProseMirror h1 { font-size: 2em; }
-.ProseMirror h2 { font-size: 1.5em; }
-.ProseMirror h3 { font-size: 1.17em; }
-.ProseMirror h4 { font-size: 1em; }
-.ProseMirror h5 { font-size: 0.83em; }
-.ProseMirror h6 { font-size: 0.67em; }
+.markdown-read-view h1 { font-size: 2em; }
+.markdown-read-view h2 { font-size: 1.5em; }
+.markdown-read-view h3 { font-size: 1.17em; }
+.markdown-read-view h4 { font-size: 1em; }
+.markdown-read-view h5 { font-size: 0.83em; }
+.markdown-read-view h6 { font-size: 0.67em; }
 
-.ProseMirror ul,
-.ProseMirror ol {
+.markdown-read-view ul,
+.markdown-read-view ol {
   margin: 1em 0;
   padding-left: 2em;
 }
 
-.ProseMirror ul li,
-.ProseMirror ol li {
+.markdown-read-view ul li,
+.markdown-read-view ol li {
   margin-bottom: 0.5em;
 }
 
-.ProseMirror code {
+.markdown-read-view li p {
+  margin: 0; /* Remove extra margin for paragraphs inside list items */
+}
+
+.markdown-read-view code {
   background-color: rgba(9, 10, 11, 0.05);
   padding: 0.2em 0.4em;
   border-radius: 3px;
   font-family: monospace;
   font-size: 0.9em;
+  color: var(--el-text-color-primary);
 }
 
-.ProseMirror pre {
+.markdown-read-view pre {
   background: #0d0d0d;
   color: #fff;
   font-family: 'JetBrainsMono', monospace;
@@ -379,35 +420,36 @@ const saveCurrentArticle = async () => {
   border-radius: 0.5rem;
 }
 
-.ProseMirror pre code {
+.markdown-read-view pre code {
   color: inherit;
   padding: 0;
   background: none;
   font-size: 0.8em;
 }
 
-.ProseMirror blockquote {
+.markdown-read-view blockquote {
   padding-left: 1em;
   border-left: 3px solid #ccc;
   margin-left: 0;
   margin-right: 0;
+  color: var(--el-text-color-primary);
 }
 
-.ProseMirror hr {
+.markdown-read-view hr {
   border: none;
   border-top: 1px solid #ccc;
   margin: 1em 0;
 }
 
-.ProseMirror strong {
+.markdown-read-view strong {
   font-weight: bold;
 }
 
-.ProseMirror em {
+.markdown-read-view em {
   font-style: italic;
 }
 
-.ProseMirror s {
+.markdown-read-view s {
   text-decoration: line-through;
 }
 

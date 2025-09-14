@@ -5,7 +5,7 @@ node_modules/
 dist/
 
 # 忽略文档生成器工作区
-gendoc-workspace/
+.gendoc-workspace/
 
 # 忽略环境变量文件
 .env

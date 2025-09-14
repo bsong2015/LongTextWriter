@@ -34,22 +34,35 @@
               <p>{{ generationStatusText }}</p>
             </div>
 
-            <!-- Content Editor View -->
-            <ContentEditor
-              v-else-if="hasContent"
-              :project="project"
-              :generated-content="generatedContent"
-              @update:generated-content="generatedContent = $event"
-              @save="fetchProjectDetails"
-            />
+            <!-- Content View (Editor or Initial Start) -->
+            <div v-else>
+              <!-- If content exists (partially or fully generated) -->
+              <div v-if="hasContent">
+                <!-- Add a continue button if not fully generated -->
+                <div v-if="project && project.status.type === 'progress' && project.status.percentage < 100" class="generation-view" style="margin-bottom: 20px;">
+                  <h3>内容生成已暂停</h3>
+                  <p>已完成 {{ generationPercentage }}%。点击下面的按钮继续生成剩余内容。</p>
+                  <el-button type="primary" size="large" @click="startGeneration" :loading="isGenerating">
+                    继续生成内容
+                  </el-button>
+                </div>
+                <ContentEditor
+                  v-if="project"
+                  :project="project"
+                  :generated-content="generatedContent"
+                  @update:generated-content="generatedContent = $event"
+                  @save="fetchProjectDetails"
+                />
+              </div>
 
-            <!-- Initial Generation Start View -->
-            <div v-else class="generation-view">
-              <h3>内容尚未生成</h3>
-              <p>点击下面的按钮开始自动生成项目的全部内容。</p>
-              <el-button type="primary" size="large" @click="startGeneration" :loading="isGenerating">
-                开始生成内容
-              </el-button>
+              <!-- Initial Generation Start View -->
+              <div v-else class="generation-view">
+                <h3>内容尚未生成</h3>
+                <p>点击下面的按钮开始自动生成项目的全部内容。</p>
+                <el-button type="primary" size="large" @click="startGeneration" :loading="isGenerating">
+                  开始生成内容
+                </el-button>
+              </div>
             </div>
           </el-tab-pane>
 
