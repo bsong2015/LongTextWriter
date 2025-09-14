@@ -292,9 +292,9 @@ onUnmounted(() => {
   align-items: center;
   margin-bottom: 24px;
   padding: 0 20px;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
+  /* max-width: 1200px; */
+  /* margin-left: auto; */
+  /* margin-right: auto; */
 }
 
 .project-title {
@@ -306,9 +306,9 @@ onUnmounted(() => {
 
 .detail-main {
   padding: 0 20px;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
+  /* max-width: 1200px; */
+  /* margin-left: auto; */
+  /* margin-right: auto; */
 }
 
 .project-tabs {
@@ -332,6 +332,32 @@ onUnmounted(() => {
   display: block;
 }
 /* --- END FIX --- */
+
+.generation-view {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px; /* Give it some space */
+  width: 100%;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+}
+
+.generation-view {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px; /* Give it some space */
+  width: 100%;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+}
 
 .generation-view h3,
 .generation-view p {

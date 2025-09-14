@@ -304,8 +304,7 @@ const saveCurrentArticle = async () => {
   padding: 20px;
   display: flex;
   flex-direction: column;
-  width: 900px; /* Fixed width for the main content area */
-  flex-shrink: 0; /* Prevent shrinking below its content size */
+  flex-grow: 1; /* Allow it to take up remaining space */
 }
 
 .editor-actions {
@@ -319,7 +318,6 @@ const saveCurrentArticle = async () => {
   border: 1px solid var(--el-border-color-light);
   border-radius: 4px;
   padding: 15px;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
@@ -359,7 +357,7 @@ const saveCurrentArticle = async () => {
   flex-grow: 1;
   overflow-y: auto;
   padding: 15px;
-  border: 1px solid var(--el-border-color-light);
+  /* border: 1px solid var(--el-border-color-light); */ /* Removed */
   border-radius: 4px;
   color: var(--el-text-color-primary); /* Ensure text color is visible in dark mode */
 }
