@@ -283,7 +283,7 @@ onUnmounted(() => {
 <style scoped>
 .project-detail-container {
   padding: 24px;
-  background-color: #f0f2f5;
+  background-color: var(--color-background-soft);
   min-height: 100vh;
 }
 
@@ -301,7 +301,7 @@ onUnmounted(() => {
   font-size: 28px;
   font-weight: bold;
   margin-left: 20px;
-  color: #303133;
+  color: var(--color-heading);
 }
 
 .detail-main {

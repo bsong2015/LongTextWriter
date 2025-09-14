@@ -4,52 +4,52 @@
 /* Target the Quill editor container and its content */
 @media (prefers-color-scheme: dark) {
   .ql-container {
-    background-color: #1a202c; /* Dark background for the editor */
-    color: #e2e8f0; /* Light text color */
-    border-color: #4a5568; /* Darker border */
+    background-color: var(--color-background); /* Dark background for the editor */
+    color: var(--color-text); /* Light text color */
+    border-color: var(--color-border); /* Darker border */
   }
 
   .ql-editor {
-    background-color: #1a202c; /* Dark background for the editable area */
-    color: #e2e8f0; /* Light text color */
+    background-color: var(--color-background); /* Dark background for the editable area */
+    color: var(--color-text); /* Light text color */
   }
 
   /* Placeholder text in dark mode */
   .ql-editor.ql-blank::before {
-    color: #a0aec0; /* Lighter placeholder color */
+    color: var(--color-text); /* Lighter placeholder color */
   }
 
   /* Toolbar styling */
   .ql-toolbar.ql-snow {
-    background-color: #2d3748; /* Darker background for the toolbar */
-    border-color: #4a5568; /* Darker border */
+    background-color: var(--color-background-soft); /* Darker background for the toolbar */
+    border-color: var(--color-border); /* Darker border */
   }
 
   /* Toolbar buttons and icons */
   .ql-toolbar.ql-snow .ql-stroke {
-    stroke: #e2e8f0; /* Light color for icons */
+    stroke: var(--color-text); /* Light color for icons */
   }
 
   .ql-toolbar.ql-snow .ql-fill {
-    fill: #e2e8f0; /* Light color for filled icons */
+    fill: var(--color-text); /* Light color for filled icons */
   }
 
   .ql-toolbar.ql-snow .ql-picker {
-    color: #e2e8f0; /* Light color for picker text */
+    color: var(--color-text); /* Light color for picker text */
   }
 
   .ql-toolbar.ql-snow .ql-picker-label {
-    color: #e2e8f0; /* Light color for picker labels */
-    border-color: #4a5568; /* Darker border */
+    color: var(--color-text); /* Light color for picker labels */
+    border-color: var(--color-border); /* Darker border */
   }
 
   .ql-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-options {
-    background-color: #2d3748; /* Darker background for dropdown options */
-    border-color: #4a5568; /* Darker border */
+    background-color: var(--color-background-soft); /* Darker background for dropdown options */
+    border-color: var(--color-border); /* Darker border */
   }
 
   .ql-toolbar.ql-snow .ql-picker-options .ql-picker-item {
-    color: #e2e8f0; /* Light color for dropdown items */
+    color: var(--color-text); /* Light color for dropdown items */
   }
 
   .ql-toolbar.ql-snow .ql-active .ql-stroke,
@@ -67,19 +67,19 @@
 
   /* Code blocks */
   .ql-editor pre.ql-syntax {
-    background-color: #2d3748; /* Darker background for code blocks */
+    background-color: var(--color-background-soft); /* Darker background for code blocks */
     color: #f6e05e; /* Yellowish text for code */
   }
 
   /* Blockquotes */
   .ql-editor blockquote {
-    border-left-color: #4a5568; /* Darker border for blockquotes */
-    color: #a0aec0; /* Lighter text for blockquotes */
+    border-left-color: var(--color-border); /* Darker border for blockquotes */
+    color: var(--color-text); /* Lighter text for blockquotes */
   }
 
   /* Lists */
   .ql-editor ol li::before,
   .ql-editor ul li::before {
-    color: #e2e8f0; /* Light color for list markers */
+    color: var(--color-text); /* Light color for list markers */
   }
 }

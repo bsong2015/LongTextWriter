@@ -355,7 +355,7 @@ onMounted(() => {
 <style scoped>
 .project-list-container {
   padding: 24px;
-  background-color: #f0f2f5; 
+  background-color: var(--color-background-soft); 
   min-height: 100vh;
 }
 
@@ -373,7 +373,7 @@ onMounted(() => {
 
 .page-title {
   font-size: 24px;
-  color: #303133;
+  color: var(--color-heading);
   margin: 0;
 }
 
