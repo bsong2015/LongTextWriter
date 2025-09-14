@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import multer from 'multer';
 import { Buffer } from 'node:buffer';
 
-import { getProjectList, createProject, deleteProject, getProjectDetails, getGeneratedProjectContent, saveGeneratedProjectContent,generateProjectOutline, startContentGeneration, saveProjectOutline, publishProject } from './core/projectManager';
+import { getProjectList, createProject, deleteProject, getProjectDetails, getGeneratedProjectContent, saveGeneratedProjectContent,generateProjectOutline, startContentGeneration, saveProjectOutline, publishProject, resetStaleGenerationStatuses } from './core/projectManager';
 import { getConfig, writeGlobalConfig, reloadConfig } from './core/configManager';
 import { AppConfig, ProjectSchema, getWorkspacePath } from '@gendoc/shared'; // Import ProjectSchema from types.ts
 import { z } from 'zod';
@@ -262,5 +262,8 @@ app.get('*', (req, res) => {
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 });
+
+// Reset any stale 'running' generation statuses on startup
+resetStaleGenerationStatuses();
 
 export default app;

@@ -39,7 +39,7 @@
               <!-- If content exists (partially or fully generated) -->
               <div v-if="hasContent">
                 <!-- Add a continue button if not fully generated -->
-                <div v-if="project && project.status.type === 'progress' && project.status.percentage < 100" class="generation-view" style="margin-bottom: 20px;">
+                <div v-if="isResumable" class="generation-view" style="margin-bottom: 20px;">
                   <h3>内容生成已暂停</h3>
                   <p>已完成 {{ generationPercentage }}%。点击下面的按钮继续生成剩余内容。</p>
                   <el-button type="primary" size="large" @click="startGeneration" :loading="isGenerating">
@@ -132,6 +132,9 @@ const isOutlineLocked = computed(() => {
 });
 
 const generationPercentage = computed(() => {
+  if (project.value?.generationStatus === 'completed') {
+    return 100; // If completed, show 100%
+  }
   if (project.value?.status.type === 'progress') {
     return project.value.status.percentage || 0;
   }
@@ -143,6 +146,19 @@ const generationStatusText = computed(() => {
     return `已完成 ${project.value.status.done} / ${project.value.status.total}`;
   }
   return '';
+});
+
+const isResumable = computed(() => {
+  if (!project.value) return false;
+
+  // Condition 1: Backend explicitly says it's in progress and not 100%
+  const backendInProgress = project.value.status.type === 'progress' && project.value.status.percentage < 100;
+
+  // Condition 2: Heuristic for a paused state after restart
+  // If backend says idle, but we have some content and it's not 100% complete
+  const heuristicPaused = project.value.status.type === 'idle' && hasContent.value && generationPercentage.value < 100;
+
+  return backendInProgress || heuristicPaused;
 });
 
 // --- Core Methods ---
@@ -250,8 +266,9 @@ function goBack() {
 
 onMounted(async () => {
   await fetchProjectDetails();
-  // If generation was already in progress on component mount, start polling
-  if (project.value?.status.type === 'progress' && project.value.status.percentage < 100) {
+  // If generation was explicitly running on component mount, start polling
+  // The backend's generationStatus is the source of truth for active generation
+  if (project.value?.generationStatus === 'running' && project.value.status.percentage < 100) {
     isGenerating.value = true;
     startPolling();
   }

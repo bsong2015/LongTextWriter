@@ -17,6 +17,11 @@ function assertNever(value: never): never {
   throw new Error(`Unhandled discriminated union member: ${JSON.stringify(value)}`);
 }
 
+function saveProject(project: Project) {
+  const projectJsonPath = path.resolve(PROJECTS_DIR, project.name, 'project.json');
+  fs.writeFileSync(projectJsonPath, JSON.stringify(project, null, 2));
+}
+
 // --- UTILITY FUNCTIONS ---
 
 function getGeneratedContentPath(projectName: string): string {
@@ -87,7 +92,8 @@ export function getProjectList() {
         const content = fs.readFileSync(projectJsonPath, 'utf-8');
         project = ProjectSchema.parse(JSON.parse(content));
 
-        if (project?.type === 'book' || project?.type === 'series' || project?.type === 'templated') {
+        // Determine status based on generationStatus first
+        if (project.generationStatus === 'running') {
             const generatedJsonPath = getGeneratedContentPath(dirName);
             if (fs.existsSync(generatedJsonPath)) {
                 const genContent = GeneratedContentSchema.parse(JSON.parse(fs.readFileSync(generatedJsonPath, 'utf-8')));
@@ -96,7 +102,26 @@ export function getProjectList() {
                 const percentage = totalArticles > 0 ? Math.round((doneArticles / totalArticles) * 100) : 0;
                 status = { type: 'progress', percentage, done: doneArticles, total: totalArticles };
             } else {
-                status = { type: 'text', value: t('status_not_started') };
+                // Should not happen if generationStatus is 'running' but no generated.json
+                status = { type: 'text', value: t('status_generating_no_progress') };
+            }
+        } else if (project.generationStatus === 'completed') {
+            status = { type: 'icon', value: 'completed' };
+        } else if (project.generationStatus === 'error') {
+            status = { type: 'icon', value: 'error' };
+        } else { // project.generationStatus === 'idle'
+            if (project?.type === 'book' || project?.type === 'series' || project?.type === 'templated') {
+                const generatedJsonPath = getGeneratedContentPath(dirName);
+                if (fs.existsSync(generatedJsonPath)) {
+                    const genContent = GeneratedContentSchema.parse(JSON.parse(fs.readFileSync(generatedJsonPath, 'utf-8')));
+                    const totalArticles = project.outline?.chapters.reduce((acc: number, ch: ChapterOutline) => acc + ch.articles.length, 0) || 0;
+                    const doneArticles = genContent.chapters.reduce((acc: number, ch) => acc + ch.articles.filter((art: ArticleGenerated) => art.status === 'done').length, 0);
+                    const percentage = totalArticles > 0 ? Math.round((doneArticles / totalArticles) * 100) : 0;
+                    // If idle but has generated content, it's a paused progress
+                    status = { type: 'progress', percentage, done: doneArticles, total: totalArticles };
+                } else {
+                    status = { type: 'text', value: t('status_not_started') };
+                }
             }
         }
 
@@ -130,7 +155,8 @@ export function getProjectDetails(projectName: string) {
 
     let status: ProjectStatus = { type: 'text', value: t('status_unknown') };
 
-    if (project?.type === 'book' || project?.type === 'series' || project?.type === 'templated') {
+    // Determine status based on generationStatus first
+    if (project.generationStatus === 'running') {
         const generatedJsonPath = getGeneratedContentPath(projectName);
         if (fs.existsSync(generatedJsonPath)) {
             const genContent = GeneratedContentSchema.parse(JSON.parse(fs.readFileSync(generatedJsonPath, 'utf-8')));
@@ -139,7 +165,26 @@ export function getProjectDetails(projectName: string) {
             const percentage = totalArticles > 0 ? Math.round((doneArticles / totalArticles) * 100) : 0;
             status = { type: 'progress', percentage, done: doneArticles, total: totalArticles };
         } else {
-            status = { type: 'text', value: t('status_not_started') };
+            // Should not happen if generationStatus is 'running' but no generated.json
+            status = { type: 'text', value: t('status_generating_no_progress') };
+        }
+    } else if (project.generationStatus === 'completed') {
+        status = { type: 'icon', value: 'completed' };
+    } else if (project.generationStatus === 'error') {
+        status = { type: 'icon', value: 'error' };
+    } else { // project.generationStatus === 'idle'
+        if (project?.type === 'book' || project?.type === 'series' || project?.type === 'templated') {
+            const generatedJsonPath = getGeneratedContentPath(projectName);
+            if (fs.existsSync(generatedJsonPath)) {
+                const genContent = GeneratedContentSchema.parse(JSON.parse(fs.readFileSync(generatedJsonPath, 'utf-8')));
+                const totalArticles = project.outline?.chapters.reduce((acc: number, ch: ChapterOutline) => acc + ch.articles.length, 0) || 0;
+                const doneArticles = genContent.chapters.reduce((acc: number, ch) => acc + ch.articles.filter((art: ArticleGenerated) => art.status === 'done').length, 0);
+                const percentage = totalArticles > 0 ? Math.round((doneArticles / totalArticles) * 100) : 0;
+                // If idle but has generated content, it's a paused progress
+                status = { type: 'progress', percentage, done: doneArticles, total: totalArticles };
+            } else {
+                status = { type: 'text', value: t('status_not_started') };
+            }
         }
     }
 
@@ -305,13 +350,30 @@ export async function startContentGeneration(projectName: string, onProgress?: P
     throw new Error(t('project_not_found_error', { projectName: projectName }));
   }
 
-  switch (project.type) {
-    case 'book':
-    case 'series':
-    case 'templated':
-      return await runOutlineBasedGeneration(project, onProgress);
-    default:
-      return assertNever(project as never);
+  // Set project status to running before starting generation
+  project.generationStatus = 'running';
+  saveProject(project);
+
+  try {
+    let result;
+    switch (project.type) {
+      case 'book':
+      case 'series':
+      case 'templated':
+        result = await runOutlineBasedGeneration(project, onProgress);
+        break;
+      default:
+        return assertNever(project as never);
+    }
+    // Set project status to completed after successful generation
+    project.generationStatus = 'completed';
+    saveProject(project);
+    return result;
+  } catch (error) {
+    // Set project status to error if generation fails
+    project.generationStatus = 'error';
+    saveProject(project);
+    throw error; // Re-throw the error for the caller to handle
   }
 }
 
@@ -540,5 +602,21 @@ export function deleteProject(projectName: string) {
   } catch (error) {
     console.error('Error deleting project:', error);
     throw new Error(t('project_delete_error', { projectName: projectName }));
+  }
+}
+
+export function resetStaleGenerationStatuses() {
+  const projects = getProjectList(); // Get all projects
+  for (const projectSummary of projects) {
+    try {
+      const project = getProjectDetails(projectSummary.name); // Get full project details
+      if (project.generationStatus === 'running') {
+        console.warn(`Resetting stale generation status for project: ${project.name}`);
+        project.generationStatus = 'idle';
+        saveProject(project);
+      }
+    } catch (error) {
+      console.error(`Error resetting stale status for project ${projectSummary.name}:`, error);
+    }
   }
 }

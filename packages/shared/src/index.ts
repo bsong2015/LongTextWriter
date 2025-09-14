@@ -5,6 +5,7 @@ export const BaseProjectSchema = z.object({
   name: z.string(),
   type: z.enum(['book', 'templated', 'series']),
   createdAt: z.string().datetime().optional(), // Made optional
+  generationStatus: z.enum(['idle', 'running', 'completed', 'error']).default('idle'),
 });
 
 // Schema for the 'idea' object in book and series projects
